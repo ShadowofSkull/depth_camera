@@ -69,8 +69,8 @@ def callback(colorFrame, depthFrame):
             cls = int(box.cls[0])
             clsName = names[cls]
 
-            # if conf < 50:
-            # continue
+            if conf <= 60:
+                continue
             # Skip if clsName is not balls
 
             # Obtain xy which is centre coords of
@@ -284,7 +284,7 @@ def ballPublishControl(closestTeamBallXZ, closestPurpleBallXZ):
         teamBallX, teamBallZ = closestTeamBallXZ
     # motorMsg.x = teamBallX
     # motorMsg.z = teamBallZ
-    motorMsg.x = 0
+    motorMsg.x = 200
     motorMsg.z = 200
     print(motorMsg)
     pubMotorControl.publish(motorMsg)
