@@ -13,3 +13,5 @@
 ## Issues
 - Color image not showing
   - Need to look into rviz or openNI doc
+
+# Documented by Adam and Zheng 
