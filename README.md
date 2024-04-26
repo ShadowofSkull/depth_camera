@@ -10,6 +10,14 @@
 7. Halfway through you might run into an error with a command starting with `colcon` because its not installed. Follow the steps from [here](https://colcon.readthedocs.io/en/released/user/installation.html#:~:text=In%20the%20context%20of%20the%20ROS%20project) to download it.
 8. At the end, you should see a program with black and white image
 
+## Setup ROS & OpenNI SDK (WIN 11)
+1. Download VM
+2. Download Ubuntu 20
+3. Setup VM
+4. Follow steps from here to setup ROS [here](https://wiki.ros.org/noetic/Installation/Ubuntu)
+5. Follow steps from here to setup OpenNI [here](https://github.com/orbbec/ros_astra_camera)
+
+
 ## Issues
 - Color image not showing
   - Need to look into rviz or openNI doc
