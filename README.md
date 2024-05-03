@@ -13,7 +13,7 @@
 ## Setup ROS & OpenNI SDK (WIN 11) *Preferred*
 1. Download VM
 2. Download Ubuntu 20
-3. Setup VM
+3. Setup VM (Remember to add usb to vm)
 4. Follow steps from here to setup ROS [here](https://wiki.ros.org/noetic/Installation/Ubuntu)
 5. Follow steps from here to setup OpenNI [here](https://github.com/orbbec/ros_astra_camera)
 
