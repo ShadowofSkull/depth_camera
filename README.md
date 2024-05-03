@@ -16,7 +16,12 @@
 3. Setup VM (Remember to add usb to vm)
 4. Follow steps from here to setup ROS [here](https://wiki.ros.org/noetic/Installation/Ubuntu)
 5. Follow steps from here to setup OpenNI [here](https://github.com/orbbec/ros_astra_camera)
-
+   - This needs to be rerun everytime for it to detect the camera
+     ```shell
+        roscd astra_camera
+        ./scripts/create_udev_rules
+        sudo udevadm control --reload && sudo  udevadm trigger
+     ```
 
 ## Issues
 1. Q:Color image not showing
