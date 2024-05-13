@@ -82,6 +82,29 @@ roslaunch ros_astra_camera astra.launch
    rosrun ros_astra_camera detect.py
 ```
 
+## Docker
+### Installation
+
+### QuickStart
+**Replace anything in <>**
+1. Pull the docker image from dockerhub
+```shell
+docker pull shadowofskull/depth_cam:latest
+```
+2. Run a container from the image
+```shell
+docker run -it -p 22:22 --name ros-x11-ex shadowofskull/depth_cam:latest
+```
+3. To check container id
+```shell
+docker ps
+```
+4. To add extra terminal
+```shell
+docker exec -it <container id> bash
+```
+
+
 ## Issues
 1. Q:Color image not showing
    1. A: Issue lies in ros2 and openni sdk for ros2, use back ros instead
