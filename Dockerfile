@@ -30,7 +30,7 @@ RUN mkdir -p ~/ros_ws/src && \
     cd ~/ros_ws/src && \
     git clone https://github.com/orbbec/ros_astra_camera.git && \
     cd ~/ros_ws && \
-    . /opt/ros/noetic/setup.sh && \
+    ./opt/ros/noetic/setup.sh && \
     catkin_make && \
     rm -rf /var/lib/apt/lists/*
 
@@ -39,8 +39,15 @@ RUN apt update && \
     apt install -y ros-noetic-rviz && \
     apt clean && rm -rf /var/lib/apt/lists/*
 
+# Setup udev rules (driver stuff)
+RUN cd ~/ros_ws && \
+    source ./devel/setup.bash && \
+    roscd astra_camera && \
+    ./scripts/create_udev_rules && \
+    udevadm control --reload && udevadm trigger
+
 # Add the ros setup.bash to the bashrc
-RUN echo -e "source /opt/ros/noetic/setup.bash\nsource ~/ros_ws/devel/setup.bash" >> ~/.bashrc
+RUN echo -e "source /opt/ros/noetic/setup.bash\nsource ~/ros_ws/devel/setup.bash" >> ~/.bashrc    
 
 # Setup the ssh server config to allow x11 for gui
 RUN sed -i 's/#*X11Forwarding.*/X11Forwarding yes/' /etc/ssh/sshd_config && \
