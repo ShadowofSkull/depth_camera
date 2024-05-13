@@ -1,5 +1,20 @@
 # depth_camera
- 
+
+## Table of Contents
+  - [Setup ROS2 \& OpenNI SDK (Windows 11) *No longer using*](#setup-ros2--openni-sdk-windows-11-no-longer-using)
+  - [Setup ROS \& OpenNI SDK (WIN 11) *Preferred*](#setup-ros--openni-sdk-win-11-preferred)
+    - [IMPORTANT NOTES](#important-notes)
+  - [How to take picture](#how-to-take-picture)
+  - [Integration of ROS depth camera \& OpenCV](#integration-of-ros-depth-camera--opencv)
+  - [Docker](#docker)
+    - [Installation](#installation)
+    - [QuickStart](#quickstart)
+    - [Extra commands](#extra-commands)
+  - [Issues](#issues)
+  - [Future Plans](#future-plans)
+  - [Author](#author)
+
+
 ## Setup ROS2 & OpenNI SDK (Windows 11) *No longer using*
 1. Download a VM of your choice (Oracle VirtualBox is used)
 2. Download Ubuntu 22.04 LTS Jammy Jellyfish iso image (so its compatible with ROS2 Humble)
@@ -84,6 +99,10 @@ roslaunch ros_astra_camera astra.launch
 
 ## Docker
 ### Installation
+1. Download docker desktop from the [site](https://www.docker.com/products/docker-desktop/)
+2. Follow instructions here
+   1. Mac: https://docs.docker.com/desktop/install/mac-install/
+   2. Windows: https://docs.docker.com/desktop/install/windows-install/
 
 ### QuickStart
 **Replace anything in <>**
@@ -95,13 +114,19 @@ docker pull shadowofskull/depth_cam:latest
 ```shell
 docker run -it -p 22:22 --name ros-x11-ex shadowofskull/depth_cam:latest
 ```
-3. To check container id
+
+### Extra commands
+- To check container id
 ```shell
 docker ps
 ```
-4. To add extra terminal
+- To add extra terminal
 ```shell
 docker exec -it <container id> bash
+```
+- To rerun already created container use
+```shell
+docker start <container id> 
 ```
 
 
