@@ -112,7 +112,7 @@ roslaunch ros_astra_camera astra.launch
 ```shell
 docker pull shadowofskull/depth_cam:latest
 ```
-1. Run a container from the image
+2. Run a container from the image
 ```shell
 docker run -it -p 22:22 --name ros-x11-ex shadowofskull/depth_cam:latest
 ```
@@ -130,6 +130,18 @@ docker exec -it <container id> bash
 ```shell
 docker start <container id> 
 ```
+
+### Dependencies (known)
+- ros-noetic-perception=1.5.0-1*
+- ros-noetic-ros-core=1.5.0-1*
+- openssh-server 
+- sudo
+- git
+- vim 
+- gedit 
+- cmake 
+- make
+- ros-noetic-rviz
 
 
 ## Issues
