@@ -103,6 +103,8 @@ roslaunch ros_astra_camera astra.launch
 2. Follow instructions here
    1. Mac: https://docs.docker.com/desktop/install/mac-install/
    2. Windows: https://docs.docker.com/desktop/install/windows-install/
+3. vcxsrv X server is required to run gui through x11 forwarding in ssh, [install](https://sourceforge.net/projects/vcxsrv/)
+4. Putty (optional)
 
 ### QuickStart
 **Replace anything in <>**
@@ -110,7 +112,7 @@ roslaunch ros_astra_camera astra.launch
 ```shell
 docker pull shadowofskull/depth_cam:latest
 ```
-2. Run a container from the image
+1. Run a container from the image
 ```shell
 docker run -it -p 22:22 --name ros-x11-ex shadowofskull/depth_cam:latest
 ```
