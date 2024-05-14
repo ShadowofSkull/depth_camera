@@ -5,13 +5,13 @@ FROM ros:noetic-perception-focal
 USER root
 
 # Install necessary basic packages and OpenNI ros dependencies in a single step
-RUN apt update && \
-    apt install -y \
+RUN apt-get update && \
+    apt-get install -y \
     openssh-server sudo git vim gedit cmake make \
     libgflags-dev ros-noetic-image-geometry ros-noetic-camera-info-manager \
     ros-noetic-image-transport ros-noetic-image-publisher libgoogle-glog-dev \
     libusb-1.0-0-dev libeigen3-dev && \
-    apt clean && rm -rf /var/lib/apt/lists/*
+    apt-get clean && rm -rf /var/lib/apt-get/lists/*
 
 # Install libuvc
 RUN git clone https://github.com/libuvc/libuvc.git && \
@@ -32,12 +32,12 @@ RUN mkdir -p ~/ros_ws/src && \
     cd ~/ros_ws && \
     ./opt/ros/noetic/setup.sh && \
     catkin_make && \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt-get/lists/*
 
 # Install additional packages
-RUN apt update && \
-    apt install -y ros-noetic-rviz && \
-    apt clean && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && \
+    apt-get install -y ros-noetic-rviz && \
+    apt-get clean && rm -rf /var/lib/apt-get/lists/*
 
 # Setup udev rules (driver stuff)
 RUN cd ~/ros_ws && \
