@@ -21,6 +21,7 @@ from IPython.display import Image, display as ipy_display
 from roboflow import Roboflow
 from ultralytics import YOLO
 from PIL import Image as PILImage
+import cv2
 
 # Clear any previous outputs
 display.clear_output()
@@ -42,17 +43,20 @@ data_yaml = f"{dataset.location}/data.yaml"
 epochs = 20
 imgsz = 640
 best_model_path = "/content/runs/detect/train/weights/best.pt"
-prediction_output_path = '/content/runs/detect/predict2/*.png'
+prediction_output_path = './content/runs/detect/predict2/*.png'
 
 # Train the model
 model = YOLO(model_path)
-model.train(data=data_yaml, epochs=epochs, imgsz=imgsz)
+#model.train(data=data_yaml, epochs=epochs, imgsz=imgsz)
 
 # Validate the model
-model.val(data=data_yaml, model=best_model_path)
+#model.val(data=data_yaml, model=best_model_path)
 
 # Perform predictions
-results = model.predict(model=best_model_path, conf=0.5, data=data_yaml)
+#results = model.predict(model=best_model_path, conf=0.5, data=data_yaml)
+#results = model.predict(model=model_path, conf=0.5, data=data_yaml)
+results = model("./balls.jpeg", save=True)
+
 
 # Display prediction results
 for image_path in glob.glob(prediction_output_path):
