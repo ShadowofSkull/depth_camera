@@ -4,19 +4,38 @@ import rospy
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 import cv2
+from ultralytics import YOLO
 
 def convertImg(data):
     bridge = CvBridge()
     try:
-      cv_image = bridge.imgmsg_to_cv2(data, "bgr8")
+      frame = bridge.imgmsg_to_cv2(data, "bgr8")
     except CvBridgeError as e:
       print(e)
+    # need test if frame keep feeding or need loop
+    # cv2.imshow("Image window", frame)
+    # cv2.waitKey(3)
 
-    cv2.imshow("Image window", cv_image)
-    cv2.waitKey(3)
+    model = YOLO("model.pt")
+    while True:
+      # Run YOLOv8 inference on the frame
+      results = model(frame)
+
+      # Visualize the results on the frame
+      annotated_frame = results[0].plot()
+
+      # Display the annotated frame
+      cv2.imshow("YOLOv8 Inference", annotated_frame)
+      if cv2.waitKey(1):
+        break
+    cv2.destroyAllWindows()
+    # accepts all formats - image/dir/Path/URL/video/PIL/ndarray. 0 for webcam
+    # results = model.predict(source="0")
+    # results = model.predict(source=frame, show=True) # Display preds. Accepts all YOLO predict arguments
+
 
     # try:
-    #   image_pub.publish(bridge.cv2_to_imgmsg(cv_image, "bgr8"))
+    #   image_pub.publish(bridge.cv2_to_imgmsg(frame, "bgr8"))
     # except CvBridgeError as e:
     #   print(e)
     # image_message = bridge.imgmsg_to_cv2(img, encoding="passthrough")
