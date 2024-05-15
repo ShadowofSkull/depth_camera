@@ -13,22 +13,25 @@ def convertImg(data):
     except CvBridgeError as e:
       print(e)
     # need test if frame keep feeding or need loop
-    # cv2.imshow("Image window", frame)
+    # cv2.imshow("Window", frame)
     # cv2.waitKey(3)
-
+    # source = cv2.imread(frame)
     model = YOLO("model.pt")
-    while True:
+    # results = model(source)
+    results = model.predict(source="0", show=True)
+    print(results)
+    # while True:
       # Run YOLOv8 inference on the frame
-      results = model(frame)
+      # results = model(frame)
 
       # Visualize the results on the frame
-      annotated_frame = results[0].plot()
+      # annotated_frame = results[0].plot()
 
       # Display the annotated frame
-      cv2.imshow("YOLOv8 Inference", annotated_frame)
-      if cv2.waitKey(1):
-        break
-    cv2.destroyAllWindows()
+      # cv2.imshow("YOLOv8 Inference", annotated_frame)
+      # if cv2.waitKey(1):
+      #   break
+    # cv2.destroyAllWindows()
     # accepts all formats - image/dir/Path/URL/video/PIL/ndarray. 0 for webcam
     # results = model.predict(source="0")
     # results = model.predict(source=frame, show=True) # Display preds. Accepts all YOLO predict arguments
