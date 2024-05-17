@@ -5,16 +5,19 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 import cv2
 
+# callback is a loop since subscriber constantly sub to topic
 def convertImg(data):
     bridge = CvBridge()
     try:
       cv_image = bridge.imgmsg_to_cv2(data, "bgr8")
+      print(type(cv_image))
     except CvBridgeError as e:
       print(e)
 
     cv2.imshow("Image window", cv_image)
-    cv2.waitKey(3)
 
+#    cv2.waitKey(3)
+	
     # try:
     #   image_pub.publish(bridge.cv2_to_imgmsg(cv_image, "bgr8"))
     # except CvBridgeError as e:
