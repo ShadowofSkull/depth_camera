@@ -12,13 +12,8 @@ def convertImg(data):
       frame = bridge.imgmsg_to_cv2(data, "bgr8")
     except CvBridgeError as e:
       print(e)
-    # need test if frame keep feeding or need loop
-    # cv2.imshow("Window", frame)
-    # cv2.imshow("Window", frame)
-    # cv2.waitKey(3)
-    # source = cv2.imread(frame)
+
     model = YOLO("yolov8m.pt")
-    print("init yolo")
 
     # Run YOLOv8 inference on the frame
     results = model(frame)
@@ -28,15 +23,12 @@ def convertImg(data):
 
     # Display the annotated frame
     cv2.imshow("YOLOv8 Inference", annotated_frame)
-    if cv2.waitKey(1) & 0xFF == ord("q"):
-      return
+#    if cv2.waitKey(1) & 0xFF == ord("q"):
+#      return
     # cv2.destroyAllWindows()
     
     
-    
-    # accepts all formats - image/dir/Path/URL/video/PIL/ndarray. 0 for webcam
-    # results = model.predict(source="0")
-    # results = model.predict(source=frame, show=True) # Display preds. Accepts all YOLO predict arguments
+  
 
 
     # try:
@@ -48,7 +40,8 @@ def convertImg(data):
 
 if __name__ == "__main__":
     rospy.init_node("detect")
-
+    # rate = rospy.Rate(10) # ROS Rate at Hz/ 10Hz = 1sec
     img = rospy.Subscriber("/camera/color/image_raw", Image, callback=convertImg)
+    # rate.sleep()
     rospy.loginfo("HELefao")
     rospy.spin()
