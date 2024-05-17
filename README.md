@@ -97,7 +97,7 @@ roslaunch ros_astra_camera astra.launch
    rosrun ros_astra_camera detect.py
 ```
 
-## Docker
+## Docker (able to use ros but udev which handles usb does not work)
 ### Installation
 1. Download docker desktop from the [site](https://www.docker.com/products/docker-desktop/)
 2. Follow instructions here
@@ -131,18 +131,13 @@ docker exec -it <container id> bash
 docker start <container id> 
 ```
 
-### Dependencies (known)
-- ros-noetic-perception=1.5.0-1*
-- ros-noetic-ros-core=1.5.0-1*
-- openssh-server 
-- sudo
-- git
-- vim 
-- gedit 
-- cmake 
-- make
-- ros-noetic-rviz
-
+### Building image from scratch
+1. Get into the folder Dockerfile exists
+2. Run
+```shell
+docker build -t <image name> . 
+```
+   - Add --no-cache if having issue building
 
 ## Issues
 1. Q:Color image not showing

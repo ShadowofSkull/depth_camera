@@ -14,6 +14,7 @@ def convertImg(data):
       print(e)
     # need test if frame keep feeding or need loop
     # cv2.imshow("Window", frame)
+    # cv2.imshow("Window", frame)
     # cv2.waitKey(3)
     # source = cv2.imread(frame)
     model = YOLO("yolov8m.pt")
@@ -21,10 +22,10 @@ def convertImg(data):
 
     while True:
       # Run YOLOv8 inference on the frame
-      results = model(frame)
+      # results = model(frame)
 
       # Visualize the results on the frame
-      annotated_frame = results[0].plot()
+      # annotated_frame = results[0].plot()
 
       # Display the annotated frame
       cv2.imshow("YOLOv8 Inference", annotated_frame)
