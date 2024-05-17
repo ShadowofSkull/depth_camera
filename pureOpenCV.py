@@ -27,7 +27,7 @@ def convertImg(data):
 
 if __name__ == "__main__":
     rospy.init_node("detect")
-
+    # need  change rate of subscribing 
     img = rospy.Subscriber("/camera/color/image_raw", Image, callback=convertImg)
     rospy.loginfo("HELefao")
     rospy.spin()
