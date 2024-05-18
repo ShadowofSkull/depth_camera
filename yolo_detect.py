@@ -48,7 +48,9 @@ prediction_output_path = './content/runs/detect/predict2/*.png'
 # Train the model
 model = YOLO(model_path)
 #model.train(data=data_yaml, epochs=epochs, imgsz=imgsz)
-
+# Export data to onnx for 3x speed on cpu / TensorRT/engine for 5x on GPU
+model.export(format='onnx')
+model.export(format='engine')
 # Validate the model
 #model.val(data=data_yaml, model=best_model_path)
 

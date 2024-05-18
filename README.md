@@ -97,6 +97,45 @@ roslaunch ros_astra_camera astra.launch
    rosrun ros_astra_camera detect.py
 ```
 
+## Python virtual env
+Purpose is to create an isolated environment for python packages so there is no risk of dependencies conflict with other similar packages
+1. Install virtual env(venv) package
+```shell
+pip install virtualenv
+```
+2. Create venv environment
+```shell
+python -m venv .venv
+```
+3. Activate env
+   1. Windows
+   ```shell
+   .venv\Scripts\activate
+   ```
+   2. Linux/Mac
+   ```shell
+   source .venv/bin/activate
+   ```
+4. Install saved dependencies
+```shell
+pip install -r requirements.txt
+```
+5. To leave env
+```shell
+deactivate
+```
+
+- Once env is activate can use pip install as usual to install new dependencies
+- To check dependencies use
+```shell
+pip list
+```
+- After adding new dependencies execute below to save dependencies
+```shell
+pip freeze > requirements.txt
+```
+
+
 ## Docker (able to use ros but udev which handles usb does not work)
 ### Installation
 1. Download docker desktop from the [site](https://www.docker.com/products/docker-desktop/)
@@ -142,6 +181,8 @@ docker build -t <image name> .
 ## Issues
 1. Q:Color image not showing
    1. A: Issue lies in ros2 and openni sdk for ros2, use back ros instead
+2. ROS2 openni seems to not support uvc camera color stream which our depth cam seems to be
+   1. check if can activate uvc like in ros1 or not
 
 ## Future Plans
 1. Find out how to integrate object detection with the depth camera/rviz
