@@ -2,3 +2,7 @@ test.py
 
 # venv
 .venv/
+
+# Ignore buffer & results folder created during runtime
+buffer/
+results/
