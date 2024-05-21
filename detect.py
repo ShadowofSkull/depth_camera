@@ -27,14 +27,26 @@ def convertImg(data):
 
     # cv2.destroyAllWindows()
     
+    
+    
+    # accepts all formats - image/dir/Path/URL/video/PIL/ndarray. 0 for webcam
+    # results = model.predict(source="0")
+    # results = model.predict(source=frame, show=True) # Display preds. Accepts all YOLO predict arguments
+
+
+    # try:
+    #   image_pub.publish(bridge.cv2_to_imgmsg(frame, "bgr8"))
+    # except CvBridgeError as e:
+    #   print(e)
+    # image_message = bridge.imgmsg_to_cv2(img, encoding="passthrough")
 
 
 if __name__ == "__main__":
     rospy.init_node("detect")
-    rate = rospy.Rate(100)
-    while not rospy.is_shutdown():
-        img = rospy.Subscriber("/camera/color/image_raw", Image, callback=convertImg)
-        print("after sub")
-        rate.sleep()
+
+
+    img = rospy.Subscriber("/camera/color/image_raw", Image, callback=convertImg)
+    print("after sub")
+    rospy.spin()
 
     
