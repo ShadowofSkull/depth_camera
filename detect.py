@@ -27,8 +27,26 @@ def convertImg(data):
 
     # cv2.destroyAllWindows()
     
-    
-    
+    for result in results:
+       print(f"Result og img nparr: {result.orig_img}\nShape: {result.orig_shape}")
+       print(f"Result numpy array: {result.numpy()}")
+       print(f"Speed: {result.speed}")
+       boxes = result.boxes
+       for box in boxes:
+          xywh = box.xywh
+          print(f"xy coord and width height: {xywh}\nclass of box: {box.cls}\nconfidence: {box.conf}\n\n")
+          # the array should contain value of every pixel of the image within the box
+          npArr = box.numpy()
+          print(f"numpy array of box: {npArr}")
+          x,y,w,h = xywh
+          centrePixelX = x + w/2
+          centrePixelY = y + h/2
+          centrePixel = npArr[int(centrePixelY)][int(centrePixelX)]
+          print(f"centre pixel value: {centrePixel}\ncentre pixel x: {centrePixelX}\ncentre pixel y: {centrePixelY}\n")
+    # For depth cam try reading from the topic depth frame pub to or else would have to save frame to folder and read from there
+    # if frame nparray same size then can directly compare xy to get centre pixel depth val to get distance
+      
+
     # accepts all formats - image/dir/Path/URL/video/PIL/ndarray. 0 for webcam
     # results = model.predict(source="0")
     # results = model.predict(source=frame, show=True) # Display preds. Accepts all YOLO predict arguments
