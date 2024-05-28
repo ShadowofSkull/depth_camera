@@ -28,17 +28,16 @@ def convertImg(data):
     # cv2.destroyAllWindows()
     
     for result in results:
-       print(f"Result og img nparr: {result.orig_img}\nShape: {result.orig_shape}")
-       print(f"Result numpy array: {result.numpy()}")
+       print(f"Result og img nparr: {len(result.orig_img)}\nShape: {result.orig_shape}")
+       
        print(f"Speed: {result.speed}")
        boxes = result.boxes
        for box in boxes:
           xywh = box.xywh
-          print(f"xy coord and width height: {xywh}\nclass of box: {box.cls}\nconfidence: {box.conf}\n\n")
+          print(f"xy coord and width height: {xywh}\nclass of box: {box.cls}\nconfidence: {box.conf[0]}\n\n")
           # the array should contain value of every pixel of the image within the box
-          npArr = box.numpy()
-          print(f"numpy array of box: {npArr}")
-          x,y,w,h = xywh
+          npArr = result.orig_img
+          x,y,w,h = xywh[0]
           centrePixelX = x + w/2
           centrePixelY = y + h/2
           centrePixel = npArr[int(centrePixelY)][int(centrePixelX)]
