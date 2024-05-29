@@ -8,27 +8,34 @@ import cv2
 from ultralytics import YOLO
 
 
+def getCoords(data):
+    global coords
+    coords = data.data
+    for coord in coords:
+        print(coord)
+
+
 def getDepth(data):
-    print("test")
+    global coords
     bridge = CvBridge()
     try:
         frame = bridge.imgmsg_to_cv2(data, "passthrough")
     except CvBridgeError as e:
         print(e)
 
-    def inner(data):
-        for coord in data:
-            # Get x y from convertImg prob use publisher and read from topic
-            x, y = coord
-            print(frame[y][x])
+    for coord in coords:
+        # Get x y from convertImg prob use publisher and read from topic
+        x, y = coord
+        print(frame[y][x])
 
-    xYSub = rospy.Subscriber("/chatter", Int16MultiArray, inner)
     # cv2.imshow("frame", frame)
     # cv2.waitKey(1)
 
 
 if __name__ == "__main__":
     rospy.init_node("depth")
-    print("init")
+    # Temp initialise it as empty arr for later sharing of coords
+    coords = []
+    coordsSub = rospy.Subscriber("/coords", Int16MultiArray, callback=getCoords)
     depthSub = rospy.Subscriber("/camera/depth/image_raw", Image, callback=getDepth)
     rospy.spin()
