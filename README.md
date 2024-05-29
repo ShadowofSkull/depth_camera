@@ -54,7 +54,7 @@
 ## Getting Detect.py to work
 It uses custom made msg so need to follow this: 
 1. Create Coords.msg and CoordsMatrix.msg in `/home/ros/ros_ws/src/ros_astra_camera/msg`
-2. Copy contents of both files from here into your local machine
+2. Copy contents of both files from `msg` folder here into your local machine 
 3. Follow the steps here to build the custom msg, [link](http://wiki.ros.org/ROS/Tutorials/CreatingMsgAndSrv#Common_step_for_msg_and_srv)
 
 ## Integration of ROS depth camera & OpenCV
