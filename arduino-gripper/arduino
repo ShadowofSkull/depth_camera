@@ -1,0 +1,38 @@
+// gripper_control.ino
+#include <Servo.h>
+
+// Define Arduino pins for the servo
+const int servoPin = 9;
+
+Servo gripperServo;
+
+#define OPEN_STATE 0
+#define CLOSE_STATE 1
+
+void setup() {
+  Serial.begin(9600);
+
+  gripperServo.attach(servoPin);
+
+  openGripper();
+}
+
+void loop() {
+  if (Serial.available() > 0) {
+    char command = Serial.read();
+
+    if (command == 'o') {
+      openGripper();
+    } else if (command == 'c') {
+      closeGripper();
+    }
+  }
+}
+
+void openGripper() {
+  gripperServo.write(90); 
+}
+
+void closeGripper() {
+  gripperServo.write(0); 
+}
