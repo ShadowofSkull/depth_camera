@@ -2,12 +2,11 @@
 
 import rospy
 from sensor_msgs.msg import Image
-
-# from std_msgs.msg import Int16MultiArray
 from astra_camera.msg import CoordsMatrix, Coords
 from cv_bridge import CvBridge, CvBridgeError
 import cv2
 from ultralytics import YOLO
+
 
 
 def convertImg(data):
@@ -29,9 +28,9 @@ def convertImg(data):
             # Convert tensor to numpy ndarray
             xywh = xywh.numpy()
             # print(
-            # f"xy coord and width height: {xywh}\nclass of box: {box.cls}\nconfidence: {box.conf[0]}\n\n"
+                # f"xy coord and width height: {xywh}\nclass of box: {box.cls}\nconfidence: {box.conf[0]}\n\n"
             # )
-            # Obtain xy which is centre coords of
+            # Obtain xy which is centre coords of 
             # print(f"xywh numpy: {xywh[0]}")
             x, y, w, h = xywh[0]
             # x y is the centre pixel of the box
@@ -44,14 +43,15 @@ def convertImg(data):
             # depthCoords.append([x, y])
             # if not (x == None or y == None or x == 0 or y == 0):
             depthCoords.append(dict)
-
             # Visualize the results on the frame
-            # annotated_frame = result.plot()
+            annotated_frame = result.plot()
             # Draw a red dot at the centre of the box illustration purpose
-            # annotated_frame[y : y + 5, x : x + 5] = [0, 0, 255]
+            annotated_frame[y : y + 5, x : x + 5] = [0, 0, 255]
         # Display the annotated frame
-        # cv2.imshow("YOLOv8 Inference", annotated_frame)
-        # cv2.waitKey(10)
+        if boxes == None:
+            continue
+        cv2.imshow("YOLOv8 Inference", annotated_frame)
+        cv2.waitKey(1)
     # Publish xy to a topic so depth node can use it
     msg.coords = depthCoords
     print(msg)

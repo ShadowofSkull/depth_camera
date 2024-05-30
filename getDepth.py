@@ -1,49 +1,45 @@
 #!/usr/bin/env python3
 
 import rospy
+import message_filters
 from sensor_msgs.msg import Image
-from std_msgs.msg import Int16MultiArray
+from astra_camera.msg import CoordsMatrix
 from cv_bridge import CvBridge, CvBridgeError
 import cv2
 from ultralytics import YOLO
 
-
-def getCoords(data):
-    print("in coords")
-    global coords
-    coords = data.data
-    for coord in coords:
-        print(coord)
-    print("done coords")
-
-
-def getDepth(data):
-    print("in depth")
-    global coords
-    bridge = CvBridge()
+def callback(coords, depthFrame):
+    coords = coords.coords
+    
     try:
-        frame = bridge.imgmsg_to_cv2(data, "passthrough")
+        frame = bridge.imgmsg_to_cv2(depthFrame, "passthrough")
     except CvBridgeError as e:
         print(e)
 
     for coord in coords:
-        # Get x y from convertImg prob use publisher and read from topic
-        x, y = coord
+        # Get x y to get depth value at the center of object
+        x = coord.x
+        y = coord.y
+        print(x, y)
         print(frame[y][x])
-    print("done depth")
-    # cv2.imshow("frame", frame)
-    # cv2.waitKey(1)
+        # Make a copy of it to make it writable
+        # frame = frame.copy()
+        # print(frame.shape)
+        # To check position is correct
+        # frame[y:y+5, x:x+5] = 10000
+        # cv2.imshow("fr", frame)
+        # cv2.waitKey(1)
+
 
 
 if __name__ == "__main__":
     rospy.init_node("depth")
-    # Temp initialise it as empty arr for later sharing of coords
-    # Need look for way to sync to subscriber callback
-    coords = []
-    rate = rospy.Rate(1)
+    bridge = CvBridge()
     print("done init")
-    coordsSub = rospy.Subscriber("/coords", Int16MultiArray, callback=getCoords)
-    depthSub = rospy.Subscriber("/camera/depth/image_raw", Image, callback=getDepth)
-    # rospy.spin()
-    while not rospy.is_shutdown():
-        rate.sleep()
+    coordsSub = message_filters.Subscriber("/coords", CoordsMatrix)
+    depthSub = message_filters.Subscriber("/camera/depth/image_raw", Image)
+    print("subscribed")
+    ts = message_filters.ApproximateTimeSynchronizer([coordsSub, depthSub], 10, 0.1, allow_headerless=True)
+    print("sync subs")
+    ts.registerCallback(callback)
+    rospy.spin()
