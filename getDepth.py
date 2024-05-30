@@ -16,12 +16,27 @@ def callback(coords, depthFrame):
     except CvBridgeError as e:
         print(e)
 
+
     for coord in coords:
         # Get x y to get depth value at the center of object
         x = coord.x
         y = coord.y
-        print(x, y)
-        print(frame[y][x])
+        conf = coord.conf
+        cls = coord.cls
+
+        print(x, y, conf, cls)
+        depthVal = frame[y][x]
+        count = 0
+        print(f"outside loop: {depthVal}")
+        # Shifting the centre point to the right to get something other than zero 5 times is the limit to prevent when the z value is actually zero
+        # Index limit is also set to not have index error 
+        while depthVal == 0 and count < 5 and x < 635 and y < 475 :
+            x += 5
+            y += 5
+            count += 1
+            depthVal = frame[y][x]
+            print(depthVal)
+
         # Make a copy of it to make it writable
         # frame = frame.copy()
         # print(frame.shape)
@@ -30,12 +45,12 @@ def callback(coords, depthFrame):
         # cv2.imshow("fr", frame)
         # cv2.waitKey(1)
 
-
-
 if __name__ == "__main__":
     rospy.init_node("depth")
     bridge = CvBridge()
+    # rate =
     print("done init")
+    # pub = rospy.Publisher("depthValue", , queue_size=10)
     coordsSub = message_filters.Subscriber("/coords", CoordsMatrix)
     depthSub = message_filters.Subscriber("/camera/depth/image_raw", Image)
     print("subscribed")

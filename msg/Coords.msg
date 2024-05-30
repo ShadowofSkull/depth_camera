@@ -1,2 +1,4 @@
-int64 x
-int64 y
+int16 x
+int16 y
+int16 conf
+string cls
