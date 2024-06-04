@@ -3,6 +3,7 @@ Steps to use the custom msgs
 
 1. Update CMakeList 
 
+```
 cmake_minimum_required(VERSION 3.0.2)
 project(gripper_control_package)
 
@@ -29,11 +30,12 @@ catkin_package(
 include_directories(
   ${catkin_INCLUDE_DIRS}
 )
-
+```
 
 
 Update package.xml, with message_generation and message_runtime 
 
+```
 <?xml version="1.0"?>
 <package format="2">
 
@@ -47,14 +49,15 @@ Update package.xml, with message_generation and message_runtime
   <build_depend>std_msgs</build_depend>
   <exec_depend>std_msgs</exec_depend>
 </package>
-
+```
 
 Build your dependencies 
 
+```
 cd ~/catkin_ws
 catkin_make
 source devel/setup.bash
-
+```
 
 
 
