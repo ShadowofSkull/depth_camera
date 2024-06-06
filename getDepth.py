@@ -37,6 +37,8 @@ def callback(coords, depthFrame):
             depthVal = frame[y][x]
             print(depthVal)
 
+        
+
         # Make a copy of it to make it writable
         # frame = frame.copy()
         # print(frame.shape)
