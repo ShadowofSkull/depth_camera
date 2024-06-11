@@ -98,7 +98,7 @@ def calcXYZ(depthVal):
 if __name__ == "__main__":
     rospy.init_node("detect")
     msg = CoordsMatrix()
-    model = YOLO("yolov8m.pt")
+    model = YOLO("./models/yolov8m.pt")
     # Detect every 6 frames
     # rate = rospy.Rate(0.2)
     print("done init")
