@@ -103,6 +103,14 @@ roslaunch ros_astra_camera astra.launch
    rosrun ros_astra_camera detect.py
 ```
 
+## Jetson Orin Nano
+### Reinstall jetpack (The OS)
+1. Using a linux machine (or maybe VM not tested), download Nvidia SDK Manager
+2. Use Jumper Wire to connect Ground and Force Reset Pin on Jetson Orin Nano
+3. Connect type C from Jetson to linux machine
+4. Provide Jetson Power to boot in (safe mode/reset mode?)
+5. Install with SDK Manager
+
 ## Python virtual env
 Purpose is to create an isolated environment for python packages so there is no risk of dependencies conflict with other similar packages
 1. Install virtual env(venv) package
