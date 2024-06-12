@@ -4,8 +4,8 @@ import time
 import rospy
 from sensor_msgs.msg import Image
 from astra_camera.msg import CoordsMatrix, Coords
+import cv2 # important to put this above cv bridge
 from cv_bridge import CvBridge, CvBridgeError
-import cv2
 from ultralytics import YOLO
 
 
