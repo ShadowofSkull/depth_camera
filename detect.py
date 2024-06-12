@@ -14,11 +14,10 @@ def callback(colorFrame, depthFrame):
     bridge = CvBridge()
     try:
         colorFrame = bridge.imgmsg_to_cv2(colorFrame, "bgr8")
-        depthFrame = bridge.imgmsg_to_cv2(depthFrame, "passthrough")
+        depthFrame = bridge.imgmsg_to_cv2(depthFrame, "16UC1")
 
     except CvBridgeError as e:
         print(e)
-    print(type(depthFrame))
     # Run YOLOv8 inference on the colorFrame
     results = model(colorFrame)
     # Check interval between callback

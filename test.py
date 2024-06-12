@@ -25,9 +25,7 @@ def inference():
     global lastDepthFrame, lastColorFrame
     # Run YOLOv8 inference on the colorFrame
     results = model(lastColorFrame)
-    # Check interval between callback
-    end = time.time()
-    print(end - start)
+
     # Initialise list to store coordinates of boxes centre point
     depthCoords = []
     for result in results:
@@ -106,7 +104,7 @@ if __name__ == "__main__":
     lastColorFrame = None
     lastDepthFrame = None
     # Detect every 6 frames
-    # rate = rospy.Rate(0.2)
+    rate = rospy.Rate(0.2)
     print("done init")
     pubCoords = rospy.Publisher("coords", CoordsMatrix, queue_size=10)
     colorSub = message_filters.Subscriber("/camera/color/image_raw", Image)
@@ -115,8 +113,8 @@ if __name__ == "__main__":
         [colorSub, depthSub], 10, 0.1, allow_headerless=True
     )
     ts.registerCallback(callback)
-    inference()
-    start = time.time()
-    rospy.spin()
-    # while not rospy.is_shutdown():
-    #     rate.sleep()
+    while not rospy.is_shutdown():
+        inference()
+        rate.sleep()
+    # start = time.time()
+    # rospy.spin()
