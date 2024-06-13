@@ -1,23 +1,25 @@
 #!/usr/bin/env python3
 import message_filters
-import time
+import time, torch
 import rospy
 from sensor_msgs.msg import Image
 from astra_camera.msg import CoordsMatrix, Coords
-import cv2 # important to put this above cv bridge
+import cv2
 from cv_bridge import CvBridge, CvBridgeError
-from ultralytics import YOLO
 
+from ultralytics import YOLO
+torch.cuda.set_device(0)
 
 def callback(colorFrame, depthFrame):
     # Convert ros msg to cv nparray that's suitable for model
     bridge = CvBridge()
     try:
         colorFrame = bridge.imgmsg_to_cv2(colorFrame, "bgr8")
-        depthFrame = bridge.imgmsg_to_cv2(depthFrame, "16UC1")
+        depthFrame = bridge.imgmsg_to_cv2(depthFrame, "passthrough")
 
     except CvBridgeError as e:
         print(e)
+    print(type(depthFrame))
     # Run YOLOv8 inference on the colorFrame
     results = model(colorFrame)
     # Check interval between callback
@@ -32,7 +34,7 @@ def callback(colorFrame, depthFrame):
         for box in boxes:
             xywh = box.xywh
             # Convert tensor to numpy ndarray
-            xywh = xywh.numpy()
+            xywh = xywh.to('cpu').detach().numpy().copy()
             conf = int(box.conf[0] * 100)
             cls = int(box.cls[0])
             clsName = names[cls]
@@ -57,8 +59,10 @@ def callback(colorFrame, depthFrame):
         if boxes == None:
             continue
         # Display the annotated frame
-        # cv2.imshow("YOLOv8 Inference", annotated_frame)
-        # cv2.waitKey(1)
+        cv2.imshow("YOLOv8 Inference", annotated_frame)
+        cv2.waitKey(1)
+        #if cv2.waitKey(1) & 0xFF == ord('q'):
+            #break
     # Instead of processing on another node process depth here so the color and depth frame matches
     for coord in depthCoords:
         # Get x y to get depth value at the center of object
@@ -98,6 +102,8 @@ if __name__ == "__main__":
     rospy.init_node("detect")
     msg = CoordsMatrix()
     model = YOLO("./models/yolov8m.pt")
+    
+
     # Detect every 6 frames
     # rate = rospy.Rate(0.2)
     print("done init")
