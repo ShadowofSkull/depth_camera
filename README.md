@@ -92,7 +92,8 @@ It uses custom made msg so need to follow this:
       ```   
 7. Run the depth camera
 ```shell
-roslaunch ros_astra_camera astra.launch
+source ./devel/setup.bash 
+roslaunch astra_camera astra.launch
 ``` 
 8. Open a terminal and run
 ```shell
