@@ -74,17 +74,8 @@ def callback(colorFrame, depthFrame):
         print(x, y, conf, cls)
         # depthVal means distance from camera to object in mm
         depthVal = depthFrame[y][x]
-        print(f"outside loop: {depthVal}")
+        print(depthVal)
 
-        count = 0
-        # Shifting the centre point to the right to get something other than zero 5 times is the limit to prevent when the z value is actually zero
-        # Index limit is also set to not have index error
-        while depthVal == 0 and count < 5 and x < 635 and y < 475:
-            x += 5
-            y += 5
-            count += 1
-            depthVal = depthFrame[y][x]
-            print(depthVal)
 
     # Publish xy to a topic so depth node can use it
     # msg.coords = depthCoords

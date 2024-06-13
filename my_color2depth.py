@@ -41,7 +41,7 @@ def callback(color_msg: Image):
     color_point.header.stamp = rospy.Time.now()
     color_point.point.x = center_x
     color_point.point.y = center_y
-    color_point.point.z = color_img[int(center_y), int(center_x)]
+    # color_point.point.z = color_img[int(center_y), int(center_x)]
 
     # Now we transform the point from the depth camera's coordinate frame to the color camera's coordinate frame
     try:
@@ -64,7 +64,7 @@ def callback(color_msg: Image):
 
 def main():
     rospy.init_node("test_sync", anonymous=True)
-    depth_sub = rospy.Subscriber("/camera/color/image_raw", Image, callback)
+    color_sub = rospy.Subscriber("/camera/color/image_raw", Image, callback)
     global tf_listener, tf_buffer
     tf_buffer = Buffer()
     tf_listener = TransformListener(tf_buffer)
