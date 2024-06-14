@@ -1,7 +1,7 @@
 
 
 import rospy
-from custom_msgs.msg import GripperControl
+from astra_camera.msg import GripperControl
 
 def gripper_command_publisher():
     rospy.init_node('gripper_command_publisher', anonymous=True)

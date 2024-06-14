@@ -75,11 +75,7 @@ def callback(colorFrame, depthFrame):
 
         # Display the annotated frame (optional)
         # Comment out the display of the inference to get values without hanging 
-        try:
-            cv2.imshow("YOLOv8 Inference", annotated_frame)
-            cv2.waitKey(1)
-        except:
-            print("failed")
+       
 
     # Instead of processing on another node process depth here so the color and depth frame matches
     for coord in depthCoords:

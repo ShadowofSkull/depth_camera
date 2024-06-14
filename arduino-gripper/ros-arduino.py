@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
 import rospy
-from custom_msgs.msg import GripperControl 
+from astra_camera.msg import GripperControl 
 import serial
 
-ARDUINO_PORT = '/dev/ttyS0' #port on wei wen's computer for arduino 
+ARDUINO_PORT = '/dev/ttyACM0' #port of arduino mega adk on jetson nano
 BAUD_RATE = 9600 
 
 arduino_serial = serial.Serial(ARDUINO_PORT, BAUD_RATE, timeout=1)
