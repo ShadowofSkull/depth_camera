@@ -144,12 +144,12 @@ def getClosestBall(depthCoords):
 
 
 def calcDistanceAndX(depth, x):
-    fov_w = 49.5
+    fov_H = 60
     resolution_w = lastColorFrame.shape[1]
     center_x = resolution_w / 2
     if x <= center_x:
-        theta_x = fov_w / resolution_w * (center_x - x)
-    theta_x = fov_w / resolution_w * (x - center_x)
+        theta_x = fov_H / resolution_w * (center_x - x)
+    theta_x = fov_H / resolution_w * (x - center_x)
     real_x = math.tan(theta_x) * depth
     print(f"real x: {real_x}mm")
     distance = math.sqrt(real_x**2 + depth**2)
