@@ -4,6 +4,7 @@ import rospy
 from custom_msgs.msg import GripperControl 
 import serial
 
+# type lsusb -v , to get the port number of your usb on the device. 
 ARDUINO_PORT = '/dev/ttyS0' #port on wei wen's computer for arduino 
 BAUD_RATE = 9600 
 
