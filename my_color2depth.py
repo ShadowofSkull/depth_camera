@@ -15,14 +15,20 @@ from tf2_geometry_msgs import do_transform_point
 
 tf_listener = None
 tf_buffer = None
+depth_img = None
 
+def callbackDepth(depth_msg: Image):
+    global depth_img
+    cv_bridge = CvBridge()
+    depth_img = cv_bridge.imgmsg_to_cv2(depth_msg, "passthrough")
 
 def callback(color_msg: Image):
+    global depth_img
     cv_bridge = CvBridge()
     color_img = cv_bridge.imgmsg_to_cv2(color_msg, "bgr8")
 
-    center_x = color_img.shape[1] / 2
-    center_y = color_img.shape[0] / 2
+    center_x = color_img.shape[1] -100
+    center_y = color_img.shape[0] -100
     try:
         trans = tf_buffer.lookup_transform(
             "camera_color_frame", "camera_depth_frame", rospy.Time(0)
@@ -60,11 +66,13 @@ def callback(color_msg: Image):
     print(
         "from color {},{} to depth {},{}".format(center_x, center_y, depth_x, depth_y)
     )
+    print(f"depth val: {depth_img[int(depth_y)][int(depth_x)]}")
 
 
 def main():
     rospy.init_node("test_sync", anonymous=True)
     color_sub = rospy.Subscriber("/camera/color/image_raw", Image, callback)
+    depth_sub = rospy.Subscriber("/camera/depth/image_raw", Image, callbackDepth)
     global tf_listener, tf_buffer
     tf_buffer = Buffer()
     tf_listener = TransformListener(tf_buffer)
