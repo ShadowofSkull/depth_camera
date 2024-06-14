@@ -19,6 +19,7 @@ def callback(colorFrame, depthFrame):
     frame_counter += 1
 
     # Process every 5th frame
+    # if frame_counter % 60 != 0:
     if frame_counter % 5 != 0:
         return
 
@@ -70,13 +71,15 @@ def callback(colorFrame, depthFrame):
             annotated_frame[y : y + 5, x : x + 5] = [0, 0, 255]
 
         # Prevent displaying error when no boxes are detected
-        if boxes == None:
-            continue
+        
 
         # Display the annotated frame (optional)
         # Comment out the display of the inference to get values without hanging 
-        # cv2.imshow("YOLOv8 Inference", annotated_frame)
-        # cv2.waitKey(100)
+        try:
+            cv2.imshow("YOLOv8 Inference", annotated_frame)
+            cv2.waitKey(1)
+        except:
+            print("failed")
 
     # Instead of processing on another node process depth here so the color and depth frame matches
     for coord in depthCoords:
@@ -106,7 +109,7 @@ def calcXYZ(depthVal):
 if __name__ == "__main__":
     rospy.init_node("detect")
     start = time.time()
-    model = YOLO("./models/yolov8m.pt")
+    model = YOLO("./models/best.pt")
     pubCoords = rospy.Publisher("coords", CoordsMatrix, queue_size=10)
     colorSub = message_filters.Subscriber("/camera/color/image_raw", Image)
     depthSub = message_filters.Subscriber("/camera/depth/image_raw", Image)
