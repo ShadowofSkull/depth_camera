@@ -15,7 +15,7 @@ def callback(colorFrame, depthFrame):
     bridge = CvBridge()
     try:
         colorFrame = bridge.imgmsg_to_cv2(colorFrame, "bgr8")
-        depthFrame = bridge.imgmsg_to_cv2(depthFrame, "16UC1")
+        depthFrame = bridge.imgmsg_to_cv2(depthFrame, "passthrough")
 
     except CvBridgeError as e:
         print(e)

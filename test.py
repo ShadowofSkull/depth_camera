@@ -25,13 +25,15 @@ def callback(colorFrame, depthFrame):
     try:
         lastColorFrame = bridge.imgmsg_to_cv2(colorFrame, "bgr8")
         lastDepthFrame = bridge.imgmsg_to_cv2(depthFrame, "16UC1")
-
+        print("callbvack")
     except CvBridgeError as e:
         print(e)
 
 
 def inference():
     global lastDepthFrame, lastColorFrame
+    if lastColorFrame == None or lastDepthFrame == None:
+        return
     # Run YOLOv8 inference on the colorFrame
     results = model(lastColorFrame)
 
@@ -44,7 +46,8 @@ def inference():
         for box in boxes:
             xywh = box.xywh
             # Convert tensor to numpy ndarray
-            xywh = xywh.numpy()
+            # Move xywh from gpu to cpu
+            xywh = xywh.to('cpu').detach().numpy().copy()
             conf = int(box.conf[0] * 100)
             cls = int(box.cls[0])
             clsName = names[cls]
@@ -72,6 +75,8 @@ def inference():
         # cv2.waitKey(1)
     # Instead of processing on another node process depth here so the color and depth frame matches
     minDistance, real_x = getClosestBall(depthCoords)
+    rate = rospy.Rate(0.2)
+    rate.sleep()
 
 
 def getClosestBall(depthCoords):
@@ -158,7 +163,7 @@ if __name__ == "__main__":
     lastColorFrame = None
     lastDepthFrame = None
     print("done init")
-    pubCoords = rospy.Publisher("coords", CoordsMatrix, queue_size=10)
+    # pubCoords = rospy.Publisher("coords", CoordsMatrix, queue_size=10)
     colorSub = message_filters.Subscriber("/camera/color/image_raw", Image)
     depthSub = message_filters.Subscriber("/camera/depth/image_raw", Image)
     # ts = message_filters.ApproximateTimeSynchronizer(
@@ -169,9 +174,8 @@ if __name__ == "__main__":
     tf_buffer = Buffer()
     tf_listener = TransformListener(tf_buffer)
     # Detect every 6 frames
-    rate = rospy.Rate(0.2)
-    while not rospy.is_shutdown():
-        inference()
-        rate.sleep()
-    # start = time.time()
-    # rospy.spin()
+
+    start = time.time()
+    inference()
+
+    rospy.spin()

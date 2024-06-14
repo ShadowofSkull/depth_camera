@@ -75,8 +75,8 @@ def callback(colorFrame, depthFrame):
 
         # Display the annotated frame (optional)
         # Comment out the display of the inference to get values without hanging 
-        #cv2.imshow("YOLOv8 Inference", annotated_frame)
-        #cv2.waitKey(1)
+        # cv2.imshow("YOLOv8 Inference", annotated_frame)
+        # cv2.waitKey(100)
 
     # Instead of processing on another node process depth here so the color and depth frame matches
     for coord in depthCoords:
@@ -86,13 +86,13 @@ def callback(colorFrame, depthFrame):
         cls = coord.cls
 
         depthVal = depthFrame[y][x]
-        count = 0
-        while depthVal == 0 and count < 5 and x < 635 and y < 475:
-            x += 5
-            y += 5
-            count += 1
-            depthVal = depthFrame[y][x]
-        print(f"Depth value at ({x}, {y}) is {depthVal}")
+        # count = 0
+        # while depthVal == 0 and count < 5 and x < 635 and y < 475:
+        #     x += 5
+        #     y += 5
+        #     count += 1
+        #     depthVal = depthFrame[y][x]
+        print(f"Depth value at ({x}, {y}) is {depthVal}, cls: {cls}")
 
     # Publish xy to a topic so depth node can use it
     msg = CoordsMatrix()
