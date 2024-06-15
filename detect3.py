@@ -59,7 +59,7 @@ def callback(colorFrame, depthFrame):
             clsName = names[cls]
 
             # Skip if clsName is not red or blue ball
-            # if not (clsName == "blueball" or clsName == "redball"):
+            # if not (clsName == "blue_ball" or clsName == "red_ball"):
             #    continue
             # Obtain xy which is centre coords of
             x, y, w, h = xywh[0]
@@ -103,15 +103,33 @@ def callback(colorFrame, depthFrame):
             closestBallXZ[0] = realXZs[i][0]
             closestBallXZ[1] = realXZs[i][1]
     
-    # gripperMsg = GripperControl()
+    # Motor publish
     motorMsg = MotorControl()
     motorMsg.horizontal = closestBallXZ[0]
     motorMsg.forward = closestBallXZ[1]
     print(motorMsg)
     pubMotorControl.publish(motorMsg)
-    # if 
-    # gripperMsg.grip = "o"
-    # gripperMsg.flip = 
+    # Gripper publish
+    global gripperState, gripperArmState
+    print(gripperState, gripperArmState)
+
+    gripperMsg = GripperControl()
+    if gripperState == "o":
+        gripperMsg.grip = "c"
+        gripperState = "c"
+    elif gripperState == "c":
+        gripperMsg.grip = "o"
+        gripperState = "o"
+
+    if gripperArmState == "forward":
+        gripperMsg.flip = "backward"
+        gripperArmState = "backward"
+    elif gripperArmState == "backward":
+        gripperMsg.flip = "forward"
+        gripperArmState = "forward"
+
+    print(gripperMsg)
+    pubGripperControl.publish(gripperMsg)
 
     # Publish xz to a topic for node to use
     # msg.xzs = realXZs
@@ -157,7 +175,8 @@ if __name__ == "__main__":
     start = time.time()
     model = YOLO("./models/best.pt")
     # msg = XZs()
-
+    gripperState = "o"
+    gripperArmState = "forward"
     print("done init")
     # pubCoords = rospy.Publisher("coords", CoordsMatrix, queue_size=10)
     # pubXZs = rospy.Publisher("xz", XZs, queue_size=10)
