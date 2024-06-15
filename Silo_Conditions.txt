@@ -1,0 +1,12 @@
+silo condition 
+
+1. Given a silo condition, choose the best silo to place the red ball.
+2. The topics that the node should subscribe to is color/image_raw.  
+3. The output should 
+
+
+
+basically ; 
+- when I point the camera, it should detect and give me the matrix / 3x5 array of 0,1,2 values, which is the silo's state.
+- then I will subscribe to this topic, and use this value to determine the best position to place the ball, and publish the best silo to place the ball in integer 1-5. as there are 5 silos. 
+
