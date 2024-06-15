@@ -59,8 +59,9 @@ def callback(colorFrame, depthFrame):
             clsName = names[cls]
 
             # Skip if clsName is not red or blue ball
-            # if not (clsName == "blue_ball" or clsName == "red_ball"):
-            #    continue
+            if (not (clsName == "blue_ball" or clsName == "red_ball")) or conf < 50:
+               continue
+            #58.5
             # Obtain xy which is centre coords of
             x, y, w, h = xywh[0]
             x = int(x)
@@ -72,7 +73,7 @@ def callback(colorFrame, depthFrame):
             # xz = XZ()
             # xz.x = real_x
             # xz.z = depth
-            realXZs.append((real_x, depth))
+            realXZs.append([real_x, depth])
             print(f"realx:{real_x}, depth:{depth}")
             # If need publish only do this
             # coord = Coords()
@@ -95,16 +96,23 @@ def callback(colorFrame, depthFrame):
         #     cv2.waitKey(1)
         # except:
         #     print("failed")
-
+    print(f"realXZs: {realXZs}")
     # list contains x, z of ball
-    closestBallXZ = [0, 0]
+    closestBallXZ = []
     for i in range(len(realXZs)):
-        if realXZs[i][1] < closestBallXZ[1]:
+        if closestBallXZ == []:
+            closestBallXZ.append(realXZs[i][0])
+            closestBallXZ.append(realXZs[i][1])
+        elif realXZs[i][1] < closestBallXZ[1]:
             closestBallXZ[0] = realXZs[i][0]
             closestBallXZ[1] = realXZs[i][1]
-    
+            
+    if not closestBallXZ:
+        print("list empty")
+        return
     # Motor publish
     motorMsg = MotorControl()
+    print(closestBallXZ[0])
     motorMsg.horizontal = closestBallXZ[0]
     motorMsg.forward = closestBallXZ[1]
     print(motorMsg)
@@ -141,10 +149,10 @@ def callback(colorFrame, depthFrame):
 def calcX(depth, x, colorFrame):
     resolution_w = colorFrame.shape[1]
     center_x = resolution_w // 2
-    # need to obtain using f = (xpixel - center x) * distance / real x
+    # need to obtain using f = (xpixel - center x) * distance / real x 462 -320 * 486 / 1400
     focal = 580
     real_x = (x - center_x) * (depth / focal)
-    return real_x
+    return int(real_x)
 
 
 
@@ -167,7 +175,7 @@ def getDepth(x, y, conf, clsName, depthFrame):
     # depth = np.nanmax(pix_in_win)
 
     print(f"Depth value at ({x}, {y}) is {depth}, cls: {clsName}, conf: {conf}")
-    return depth
+    return int(depth)
 
 
 if __name__ == "__main__":
