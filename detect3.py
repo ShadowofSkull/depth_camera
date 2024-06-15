@@ -58,7 +58,7 @@ def callback(colorFrame, depthFrame):
             clsName = names[cls]
 
             # Skip if clsName is not red or blue ball
-            #if not (clsName == "blueball" or clsName == "redball"):
+            # if not (clsName == "blueball" or clsName == "redball"):
             #    continue
             # Obtain xy which is centre coords of
             x, y, w, h = xywh[0]
@@ -112,6 +112,9 @@ def calcX(depth, x, colorFrame):
 
 
 def getDepth(x, y, conf, clsName, colorFrame):
+    padded_img = cv2.copyMakeBorder(
+        colorFrame, pad_size, pad_size, pad_size, pad_size, cv2.BORDER_CONSTANT, value=0
+    )
     # Create a max spatial filter to get the max value in a 3x3 or bigger window
     window_size = 21
     # window_size change pattern = 3 + 2x, x = 0, 1, 2,...
@@ -119,7 +122,7 @@ def getDepth(x, y, conf, clsName, colorFrame):
     # Do some substitution to get the formula
     # pad = (win - 1) // 2
     pad_size = (window_size - 1) // 2
-    pix_in_win = colorFrame[
+    pix_in_win = padded_img[
         y - pad_size : y + pad_size + 1, x - pad_size : x + pad_size + 1
     ]
     depth = pix_in_win.max()
@@ -128,7 +131,6 @@ def getDepth(x, y, conf, clsName, colorFrame):
 
     print(f"Depth value at ({x}, {y}) is {depth}, cls: {clsName}, conf: {conf}")
     return depth
-  
 
 
 if __name__ == "__main__":
