@@ -4,7 +4,7 @@ import rospy
 from astra_camera.msg import GripperControl 
 import serial
 
-ARDUINO_PORT = '/dev/ttyACM0' #port of arduino mega adk on jetson nano
+ARDUINO_PORT = '/dev/ttyACM1' #port of arduino mega adk on jetson nano
 BAUD_RATE = 9600 
 
 arduino_serial = serial.Serial(ARDUINO_PORT, BAUD_RATE, timeout=1)

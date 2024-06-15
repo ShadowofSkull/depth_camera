@@ -72,7 +72,7 @@ def callback(colorFrame, depthFrame):
             xz.x = real_x
             xz.z = depth
             realXZs.append(xz)
-
+            print(f"realx:{real_x}, depth:{depth}")
             # If need publish only do this
             # coord = Coords()
             # coord.x = x
@@ -87,11 +87,11 @@ def callback(colorFrame, depthFrame):
             annotated_frame[y : y + 5, x : x + 5] = [0, 0, 255]
 
         # Display the annotated frame (optional)
-        try:
-            cv2.imshow("YOLOv8 Inference", annotated_frame)
-            cv2.waitKey(1)
-        except:
-            print("failed")
+        # try:
+        #     cv2.imshow("YOLOv8 Inference", annotated_frame)
+        #     cv2.waitKey(1)
+        # except:
+        #     print("failed")
 
     # Publish xz to a topic for node to use
     msg.xzs = realXZs
@@ -112,7 +112,6 @@ def calcX(depth, x, colorFrame):
 
 
 def getDepth(x, y, conf, clsName, colorFrame):
-    print(f"HELLO")
     # Create a max spatial filter to get the max value in a 3x3 or bigger window
     window_size = 21
     # window_size change pattern = 3 + 2x, x = 0, 1, 2,...
@@ -128,32 +127,8 @@ def getDepth(x, y, conf, clsName, colorFrame):
     # depth = np.nanmax(pix_in_win)
 
     print(f"Depth value at ({x}, {y}) is {depth}, cls: {clsName}, conf: {conf}")
-
-    # Instead of processing on another node process depth here so the color and depth frame matches
-    # for coord in depthCoords:
-    #     x = coord.x
-    #     y = coord.y
-    #     conf = coord.conf
-    #     cls = coord.cls
-
-    #     # Create a spatial filter max to get the max value in a 3x3 or bigger window
-    #     window_size = 3
-    #     pad_size = (window_size - 1) // 2
-    #     [nrow, ncol] = colorFrame.shape
-    #     for centreY in range(pad_size, nrow + 1):
-    #         for centreX in range(pad_size, ncol + 1):
-    #             pix_in_win = padded_img[
-    #                 centreY - pad_size : centreY + pad_size + 1, centreX - pad_size : centreX + pad_size + 1
-    #             ]
-
-    #     depthVal = depthFrame[y][x]
-
-    #     print(f"Depth value at ({x}, {y}) is {depthVal}, cls: {cls}")
-
-    # Publish xy to a topic so depth node can use it (not currently using)
-    # msg = CoordsMatrix()
-    # msg.coords = depthCoords
-    # pubCoords.publish(msg)
+    return depth
+  
 
 
 if __name__ == "__main__":
@@ -161,6 +136,7 @@ if __name__ == "__main__":
     start = time.time()
     model = YOLO("./models/best.pt")
     msg = XZs()
+    print("done init")
     # pubCoords = rospy.Publisher("coords", CoordsMatrix, queue_size=10)
     pubXZs = rospy.Publisher("xz", XZs, queue_size=10)
     colorSub = message_filters.Subscriber("/camera/color/image_raw", Image)
@@ -171,4 +147,5 @@ if __name__ == "__main__":
     # ts = message_filters.TimeSynchronizer([colorSub, depthSub], 10)
 
     ts.registerCallback(callback)
+    print("done sub/pub, callback")
     rospy.spin()
