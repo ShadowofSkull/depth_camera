@@ -1,41 +1,24 @@
-/*
- * rosserial Servo Control Example
- *
- * This sketch demonstrates the control of hobby R/C servos
- * using ROS and the arduiono
- * 
- * For the full tutorial write up, visit
- * www.ros.org/wiki/rosserial_arduino_demos
- *
- * For more information on the Arduino Servo Library
- * Checkout :
- * http://www.arduino.cc/en/Reference/Servo
- */
-
-#if (ARDUINO >= 100)
- #include <Arduino.h>
-#else
- #include <WProgram.h>
-#endif
-
-#include <Servo.h> 
+#include <Servo.h>
 #include <ros.h>
-#include <std_msgs/UInt16MultiArray.h>
+#include <std_msgs/Char.h>
 
 ros::NodeHandle nh;
 
 Servo servo1;
 Servo servo2;
 
-void servo_cb(const std_msgs::UInt16MultiArray& cmd_msg) {
-  if (cmd_msg.layout.dim[0].size == 2) {
-    servo1.write(cmd_msg.data[0]); // set servo1 angle, should be from 0-180
-    servo2.write(cmd_msg.data[1]); // set servo2 angle, should be from 0-180
-    digitalWrite(13, HIGH - digitalRead(13)); // toggle led
+void gripper_cb(const std_msgs::Char& cmd_msg) {
+  if (cmd_msg.data == 'o') {
+    servo1.write(120); // open position for servo1
+    servo2.write(60);  // open position for servo2
+  } else if (cmd_msg.data == 'c') {
+    servo1.write(60);  // close position for servo1
+    servo2.write(120); // close position for servo2
   }
+  digitalWrite(13, HIGH - digitalRead(13)); // toggle led
 }
 
-ros::Subscriber<std_msgs::UInt16MultiArray> sub("servo", servo_cb);
+ros::Subscriber<std_msgs::Char> sub("gripper_control", gripper_cb);
 
 void setup() {
   pinMode(13, OUTPUT);
@@ -44,7 +27,7 @@ void setup() {
   nh.subscribe(sub);
   
   servo1.attach(9); // attach servo1 to pin 9
-  servo2.attach(3); // attach servo2 to pin 10
+  servo2.attach(3); // attach servo2 to pin 3
 }
 
 void loop() {

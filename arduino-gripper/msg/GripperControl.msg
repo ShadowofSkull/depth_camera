@@ -1,1 +1,1 @@
-string command
+char data
