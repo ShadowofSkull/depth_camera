@@ -119,22 +119,21 @@ def callback(colorFrame, depthFrame):
     pubMotorControl.publish(motorMsg)
     # Gripper publish
     global gripperState, gripperArmState
-    print(gripperState, gripperArmState)
 
     gripperMsg = GripperControl()
     if gripperState == "o":
-        gripperMsg.grip = "c"
         gripperState = "c"
+        gripperMsg.grip = gripperState
     elif gripperState == "c":
-        gripperMsg.grip = "o"
         gripperState = "o"
+        gripperMsg.grip = gripperState
 
     if gripperArmState == "forward":
-        gripperMsg.flip = "backward"
         gripperArmState = "backward"
+        gripperMsg.flip = gripperArmState
     elif gripperArmState == "backward":
-        gripperMsg.flip = "forward"
         gripperArmState = "forward"
+        gripperMsg.flip = gripperArmState
 
     print(gripperMsg)
     pubGripperControl.publish(gripperMsg)
@@ -188,8 +187,8 @@ if __name__ == "__main__":
     print("done init")
     # pubCoords = rospy.Publisher("coords", CoordsMatrix, queue_size=10)
     # pubXZs = rospy.Publisher("xz", XZs, queue_size=10)
-    pubGripperControl = rospy.Publisher("gripperControl", GripperControl, queue_size=10)
-    pubMotorControl = rospy.Publisher("motorControl", MotorControl, queue_size=10)
+    pubGripperControl = rospy.Publisher("gripper_control", GripperControl, queue_size=10)
+    pubMotorControl = rospy.Publisher("motor_control", MotorControl, queue_size=10)
     colorSub = message_filters.Subscriber("/camera/color/image_raw", Image)
     depthSub = message_filters.Subscriber("/camera/depth/image_raw", Image)
     ts = message_filters.ApproximateTimeSynchronizer(
