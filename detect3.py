@@ -44,7 +44,8 @@ def callback(colorFrame, depthFrame):
     start = end
 
     # Initialise list to store coordinates of boxes centre point
-    realXZs = []
+    teamBallRealXZs = []
+    purpleBallRealXZs = []
     for result in results:
         # Obtain classes name model can detect
         names = result.names
@@ -58,10 +59,10 @@ def callback(colorFrame, depthFrame):
             cls = int(box.cls[0])
             clsName = names[cls]
 
-            # Skip if clsName is not red or blue ball
-            if (not (clsName == "blue_ball" or clsName == "red_ball")) or conf < 50:
+            # Skip if clsName is not balls
+            if clsName not in ["red_ball", "blue_ball", "purple_ball"] or conf < 50:
                continue
-            #58.5
+ 
             # Obtain xy which is centre coords of
             x, y, w, h = xywh[0]
             x = int(x)
@@ -69,47 +70,59 @@ def callback(colorFrame, depthFrame):
 
             depth = getDepth(x, y, conf, clsName, depthFrame)
             real_x = calcX(depth, x, colorFrame)
-            # Publish xz to a topic so node can use it
-            # xz = XZ()
-            # xz.x = real_x
-            # xz.z = depth
-            realXZs.append([real_x, depth])
+
+            if clsName == "purple_ball":
+                purpleBallRealXZs.append([real_x, depth])
+                print(f"purple realx:{real_x}, depth:{depth}")
+                continue
+
+            teamBallRealXZs.append([real_x, depth])
             print(f"realx:{real_x}, depth:{depth}")
-            # If need publish only do this
-            # coord = Coords()
-            # coord.x = x
-            # coord.y = y
-            # coord.conf = conf
-            # coord.cls = clsName
-            # depthCoords.append(coord)
 
-            
+    if (not teamBallRealXZs):
+        print("No team ball found")
+        return
 
-            # Visualize the results on the frame (optional)
-            annotated_frame = result.plot()
-            # Draw a red dot at the centre of the box illustration purpose
-            # annotated_frame[y : y + 5, x : x + 5] = [0, 0, 255]
+    
+    while True:
+        teamBall = findClosestBall(teamBallRealXZs)
+        tBallX, tBallZ = teamBall[0], teamBall[1]
+        purpleBall = findClosestBall(purpleBallRealXZs)
+        pBallX, pBallZ = purpleBall[0], purpleBall[1]
+        if tBallX < pBallX - 300 or tBallX > pBallX + 300:
+            print("balls not on same x axis")
+            break
+        
+        if tBallZ <= pBallZ:
+            print("team ball in front of purple ball")
+            break
 
-        # Display the annotated frame (optional)
-        # try:
-        #     cv2.imshow("YOLOv8 Inference", annotated_frame)
-        #     cv2.waitKey(1)
-        # except:
-        #     print("failed")
-    print(f"realXZs: {realXZs}")
-    # list contains x, z of ball
+        print("purple ball blocking")
+        teamBallRealXZs.remove(teamBall)
+        
+        if not teamBallRealXZs:
+            print("No suitable team ball found")
+            return
+    
+    publishControl(teamBall)
+
+
+def findClosestBall(ballRealXZs):        
+    
     closestBallXZ = []
-    for i in range(len(realXZs)):
+    for i in range(len(ballRealXZs)):
         if closestBallXZ == []:
-            closestBallXZ.append(realXZs[i][0])
-            closestBallXZ.append(realXZs[i][1])
-        elif realXZs[i][1] < closestBallXZ[1]:
-            closestBallXZ[0] = realXZs[i][0]
-            closestBallXZ[1] = realXZs[i][1]
+            closestBallXZ.append(ballRealXZs[i][0])
+            closestBallXZ.append(ballRealXZs[i][1])
+        elif ballRealXZs[i][1] < closestBallXZ[1]:
+            closestBallXZ[0] = ballRealXZs[i][0]
+            closestBallXZ[1] = ballRealXZs[i][1]
             
     if not closestBallXZ:
         print("list empty")
-        return
+        return []
+
+def publishControl(closestBallXZ):
     # Motor publish
     motorMsg = MotorControl()
     print(closestBallXZ[0])
@@ -138,10 +151,6 @@ def callback(colorFrame, depthFrame):
     print(gripperMsg)
     pubGripperControl.publish(gripperMsg)
 
-    # Publish xz to a topic for node to use
-    # msg.xzs = realXZs
-    # print(msg.xzs)
-    # pubXZs.publish(msg)
 
 
 
@@ -181,12 +190,11 @@ if __name__ == "__main__":
     rospy.init_node("detect")
     start = time.time()
     model = YOLO("./models/best.pt")
-    # msg = XZs()
+
     gripperState = "o"
     gripperArmState = "forward"
     print("done init")
-    # pubCoords = rospy.Publisher("coords", CoordsMatrix, queue_size=10)
-    # pubXZs = rospy.Publisher("xz", XZs, queue_size=10)
+
     pubGripperControl = rospy.Publisher("gripper_control", GripperControl, queue_size=10)
     pubMotorControl = rospy.Publisher("motor_control", MotorControl, queue_size=10)
     colorSub = message_filters.Subscriber("/camera/color/image_raw", Image)
