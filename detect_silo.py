@@ -148,6 +148,8 @@ def callback(colorFrame, depthFrame):
         siloNum += 1
     print(siloMatrix)
 
+    # findBestSilo(siloMatrix)
+
     # Avoid going for red ball that are blocked by purple ball
     while True:
         teamBall = findClosestBall(teamBallRealXZs)
@@ -172,6 +174,20 @@ def callback(colorFrame, depthFrame):
     publishControl(teamBall)
 
 
+#1. Choosing top to achieve blockage and one mua vang
+#2. Bottom layer to force them to put second which allow us to choose top
+#3. If second layer only option check if bottom is our color or just wait for top
+# approach remove empty so can directly len size of silo to know how many layer are filled
+def findBestSilo(siloMatrix):
+    # for layer in range(2):
+    #     for silo in range(len(siloMatrix)):
+    #         if 
+    # for layer in range(len(siloMatrix[0])):
+    #     for silo in range(len(siloMatrix)):
+    #         # 1 is red,2 is blue,3 is purple, 0 is none
+    #         if siloMatrix[silo][layer] == 
+
+
 def findClosestBall(ballRealXZs):
 
     closestBallXZ = []
@@ -188,12 +204,12 @@ def findClosestBall(ballRealXZs):
         return []
 
 
-def publishControl(closestBallXZ):
+def publishControl(coordinatesToApproach):
     # Motor publish
     motorMsg = MotorControl()
-    print(closestBallXZ[0])
-    motorMsg.horizontal = closestBallXZ[0]
-    motorMsg.forward = closestBallXZ[1]
+    print(coordinatesToApproach[0])
+    motorMsg.horizontal = coordinatesToApproach[0]
+    motorMsg.forward = coordinatesToApproach[1]
     print(motorMsg)
     pubMotorControl.publish(motorMsg)
     # Gripper publish
@@ -216,6 +232,8 @@ def publishControl(closestBallXZ):
 
     print(gripperMsg)
     pubGripperControl.publish(gripperMsg)
+    # To control change of decision 
+    time.sleep(1)
 
 
 def calcX(depth, x, colorFrame):
