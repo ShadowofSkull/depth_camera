@@ -1,10 +1,10 @@
+#!/usr/bin/env python3
 import message_filters
 import time
 import torch
 import rospy
 from sensor_msgs.msg import Image
 from astra_camera.msg import CoordsMatrix, Coords, XZ, XZs, MotorControl, GripperControl
-from std_msgs.msg import Int32MultiArray
 import cv2
 from cv_bridge import CvBridge, CvBridgeError
 from ultralytics import YOLO
@@ -15,176 +15,260 @@ torch.cuda.set_device(0)
 
 # Initialize global variables
 frame_counter = 0
-silo_matrix = np.zeros((3, 5), dtype=int)  # Initialize the 3x5 matrix
-silo_boxes = []  # List to store silo bounding boxes [(x_min, y_min, x_max, y_max)]
+
 
 def callback(colorFrame, depthFrame):
-    global frame_counter, start, model, pubCoords, pubSiloState, silo_boxes
+    global frame_counter, start, model, pubCoords
     frame_counter += 1
 
     # Process every 5th frame
     if frame_counter % 60 != 0:
+        # if frame_counter % 5 != 0:
         return
 
     # Convert ROS msg to cv nparray that's suitable for model
     bridge = CvBridge()
     try:
-        colorFrame_cv = bridge.imgmsg_to_cv2(colorFrame, "bgr8")
-        colorFrame_draw = colorFrame_cv.copy()  # Copy for drawing purposes
+        colorFrame = bridge.imgmsg_to_cv2(colorFrame, "bgr8")
         depthFrame = bridge.imgmsg_to_cv2(depthFrame, "passthrough")
-        draw_box = bridge.imgmsg_to_cv2(colorFrame, "bgr8")
     except CvBridgeError as e:
         print(e)
         return
 
     # Run YOLOv8 inference on the colorFrame
-    results = model(colorFrame_cv)
+    results = model(colorFrame)
 
     # Check interval between callback
     end = time.time()
-    print(f"Time between frames: {end - start:.2f} seconds")
+    # print(f"Time between frames: {end - start:.2f} seconds")
     start = end
 
-    # Initialize list to store coordinates of boxes centre point
-    realXZs = []
-
+    # Initialise list to store coordinates of boxes centre point
+    teamBallRealXZs = []
+    purpleBallRealXZs = []
+    silos = []
+    balls = []
     for result in results:
-
-        # Obtain class names the model can detect
+        # Obtain classes name model can detect
         names = result.names
-        print(f"names: {names}")
+        # print(f"name: {names}")
         boxes = result.boxes
         for box in boxes:
             xywh = box.xywh
-
             # Convert tensor to numpy ndarray
             xywh = xywh.to("cpu").detach().numpy().copy()
             conf = int(box.conf[0] * 100)
             cls = int(box.cls[0])
             clsName = names[cls]
 
-            # Skip if clsName is not red or blue ball
-            if clsName not in ["red_ball", "blue_ball", ""] or conf < 50:
-                continue
+            # if conf < 50:
+            # continue
+            # Skip if clsName is not balls
 
-            # Obtain xy which is centre coords of the box
+            # Obtain xy which is centre coords of
             x, y, w, h = xywh[0]
             x = int(x)
             y = int(y)
 
-            # Extract the coordinates and dimensions of the bounding box
-            try:
-                x_center, y_center, width, height = xywh[0]
-                x_center = int(x_center)
-                y_center = int(y_center)
-            except:
-                print("no xywh")
-                return
-            # Calculate the height of each section (one-third of the original height)
-            section_height = height / 3
+            if clsName in ["Silo"]:
+                # lower upper x bound of 5 silos
+                print(f"x: {x}, w:{w}")
+                silos.append([x, w])
+                continue
 
-            # Calculate the y-coordinates for the centers of the new bounding boxes
-            y_center1 = y_center - section_height
-            y_center2 = y_center
-            y_center3 = y_center + section_height
+            # For processing balls in silos later
+            balls.append([x, y, clsName])
 
-            # Create new bounding boxes for each section
-            box1 = [x_center, y_center1, width, section_height]
-            box2 = [x_center, y_center2, width, section_height]
-            box3 = [x_center, y_center3, width, section_height]
-            # xywh 
-            # left = x - w/2 right = x + w/2
-            # if ball1_y > ball2_y  layer2 = ball1 layer 1 = ball2
-            # print the box1,2,3 x_center, y, width and height
-            print(f'box1 : {box1}, box2 : {box2}, box 3 : {box3}')
-
-            # Calculate depth and real x-coordinate
+            # To get real x and depth for balls on the floor
             depth = getDepth(x, y, conf, clsName, depthFrame)
-            real_x = calcX(depth, x, colorFrame_cv)
-            realXZs.append([real_x, depth, clsName])
-            print(f"realx: {real_x}, depth: {depth}, clsName: {clsName}")
+            real_x = calcX(depth, x, colorFrame)
+            # Separate ball by purple and team color
+            if clsName == "purple_ball":
+                purpleBallRealXZs.append([real_x, depth])
+                # print(f"purple realx:{real_x}, depth:{depth}")
+                continue
 
-    # Update the silo matrix and draw bounding boxes around detected silos
-    updateSiloMatrix(realXZs)
+            teamBallRealXZs.append([real_x, depth])
+            # print(f"realx:{real_x}, depth:{depth}")
 
-    # Publish the matrix to a ROS topic
-    msg = Int32MultiArray(data=silo_matrix.flatten().tolist())
-    pubSiloState.publish(msg)
-    print(f"silo_matrix: {silo_matrix}")
+    if not teamBallRealXZs:
+        print("No team ball found, robot stop")
+        return
 
-    # Display the annotated frame with silo bounding boxes
-    try:
+    # make it so that it sort only using x value
+    def sortByFirstEle(e):
+        return e[0]
+    # it is 2d array so two values and by providing key to only sort using the first val which is x 
+    silos.sort(key=sortByFirstEle)
+    # Assigning lower and upper x axis bound of each silo
+    silosBound = [[silo[0] - silo[1] // 2, silo[0] + silo[1] // 2] for silo in silos]
+    print(silosBound)
+    # Setting the matrix as empty, 9999 is so when using sorting algo it goes to the back as it represent the top of silo
+    siloMatrix = [
+        [[9999, "empty"], [9999, "empty"], [9999, "empty"]] for _ in range(5)
+    ]
 
-        # Draw the new bounding boxes on the image
-        #box 1 
-        cv2.rectangle(colorFrame_draw, (int(x_center - width / 2), int(y_center1 - section_height / 2)), 
-                        (int(x_center + width / 2), int(y_center1 + section_height / 2)), (0, 255, 0), 2)
-        #box 2 
-        cv2.rectangle(colorFrame_draw, (int(x_center - width / 2), int(y_center2 - section_height / 2)), 
-                        (int(x_center + width / 2), int(y_center2 + section_height / 2)), (0, 255, 0), 2)
-        #box 3
-        cv2.rectangle(colorFrame_draw, (int(x_center - width / 2), int(y_center3 - section_height / 2)), 
-                        (int(x_center + width / 2), int(y_center3 + section_height / 2)), (0, 255, 0), 2)
+    # Checking which silo the ball belong to by checking if its center x axis is within silo boundary
+    siloNum = 0
+    for siloBound in silosBound:
+        lower, upper = siloBound
+        layer = 0
+        for ball in balls:
+            if layer == 3:
+                break
+            x, y, clsName = ball
+            if x >= lower and x <= upper:
+                print(siloNum)
+                siloMatrix[siloNum][layer] = [y, clsName]
+                layer += 1
+        siloNum += 1
 
-        cv2.imshow("YOLOv8 Inference", colorFrame_draw)
-        cv2.waitKey(1)
-    except Exception as e:
-        print(f"Failed to display frame: {e}")
+    print(f"{siloMatrix}\n")
+    # Sort the y value in each silos in ascending order
+    for silo in siloMatrix:
+        silo.sort()
+        
+    print(f"{siloMatrix}\n")
 
-    # Motor and Gripper control code (omitted for brevity)
+    # Replacing the matrix with single int values that represent different ball color
+    siloNum = 0
+    for silo in siloMatrix:
+        layer = 0
+        for ball in silo:
+            if ball[1] == "red_ball":
+                color = 1
+            elif ball[1] == "blue_ball":
+                color = 2
+            elif ball[1] == "purple_ball":
+                color = 3
+            else:
+                color = 0
+            siloMatrix[siloNum][layer] = color
+            layer += 1
+        siloNum += 1
+    print(siloMatrix)
 
-def updateSiloMatrix(realXZs):
-    global silo_matrix
+    # Avoid going for red ball that are blocked by purple ball
+    while True:
+        teamBall = findClosestBall(teamBallRealXZs)
+        tBallX, tBallZ = teamBall[0], teamBall[1]
+        purpleBall = findClosestBall(purpleBallRealXZs)
+        pBallX, pBallZ = purpleBall[0], purpleBall[1]
+        if tBallX < pBallX - 300 or tBallX > pBallX + 300:
+            print("balls not on same x axis")
+            break
 
-    # Reset silo matrix to zeros
-    silo_matrix = np.zeros((3, 5), dtype=int)
-    
-    for realXZ in realXZs:
-        real_x, depth, clsName = realXZ
-        if clsName == "red_ball":
-            ball_value = 1
-        elif clsName == "blue_ball":
-            ball_value = 2
-        else:
-            ball_value = 0
+        if tBallZ <= pBallZ:
+            print("team ball in front of purple ball")
+            break
 
-        # Determine the section where the ball falls based on the real x-coordinate
-        section_index = min(max(int((real_x + 2.5) // 2.5), 0), 4)  # 0-4
-        silo_matrix[2][section_index] = ball_value  # Update the bottom row of the matrix
+        print("purple ball blocking")
+        teamBallRealXZs.remove(teamBall)
 
-    return silo_matrix
+        if not teamBallRealXZs:
+            print("No suitable team ball found")
+            return
+
+    publishControl(teamBall)
+
+
+def findClosestBall(ballRealXZs):
+
+    closestBallXZ = []
+    for i in range(len(ballRealXZs)):
+        if closestBallXZ == []:
+            closestBallXZ.append(ballRealXZs[i][0])
+            closestBallXZ.append(ballRealXZs[i][1])
+        elif ballRealXZs[i][1] < closestBallXZ[1]:
+            closestBallXZ[0] = ballRealXZs[i][0]
+            closestBallXZ[1] = ballRealXZs[i][1]
+
+    if not closestBallXZ:
+        print("list empty")
+        return []
+
+
+def publishControl(closestBallXZ):
+    # Motor publish
+    motorMsg = MotorControl()
+    print(closestBallXZ[0])
+    motorMsg.horizontal = closestBallXZ[0]
+    motorMsg.forward = closestBallXZ[1]
+    print(motorMsg)
+    pubMotorControl.publish(motorMsg)
+    # Gripper publish
+    global gripperState, gripperArmState
+
+    gripperMsg = GripperControl()
+    if gripperState == "o":
+        gripperState = "c"
+        gripperMsg.grip = gripperState
+    elif gripperState == "c":
+        gripperState = "o"
+        gripperMsg.grip = gripperState
+
+    if gripperArmState == "forward":
+        gripperArmState = "backward"
+        gripperMsg.flip = gripperArmState
+    elif gripperArmState == "backward":
+        gripperArmState = "forward"
+        gripperMsg.flip = gripperArmState
+
+    print(gripperMsg)
+    pubGripperControl.publish(gripperMsg)
 
 
 def calcX(depth, x, colorFrame):
     resolution_w = colorFrame.shape[1]
     center_x = resolution_w // 2
+    # need to obtain using f = (xpixel - center x) * distance / real x 462 -320 * 486 / 1400
     focal = 580
     real_x = (x - center_x) * (depth / focal)
     return int(real_x)
 
+
 def getDepth(x, y, conf, clsName, depthFrame):
+    # Create a max spatial filter to get the max value in a 3x3 or bigger window
     window_size = 5
+    # window_size change pattern = 3 + 2x, x = 0, 1, 2,...
+    # pad_size change pattern = 1 + x, x = 0, 1, 2,...
+    # Do some substitution to get the formula
+    # pad = (win - 1) // 2
     pad_size = (window_size - 1) // 2
-    padded_img = cv2.copyMakeBorder(depthFrame, pad_size, pad_size, pad_size, pad_size, cv2.BORDER_CONSTANT, value=0)
-    pix_in_win = padded_img[y - pad_size : y + pad_size + 1, x - pad_size : x + pad_size + 1]
+    padded_img = cv2.copyMakeBorder(
+        depthFrame, pad_size, pad_size, pad_size, pad_size, cv2.BORDER_CONSTANT, value=0
+    )
+    pix_in_win = padded_img[
+        y - pad_size : y + pad_size + 1, x - pad_size : x + pad_size + 1
+    ]
     depth = pix_in_win.max()
+    # if they store nan value in pixel need use this
+    # depth = np.nanmax(pix_in_win)
+
     print(f"Depth value at ({x}, {y}) is {depth}, cls: {clsName}, conf: {conf}")
     return int(depth)
+
 
 if __name__ == "__main__":
     rospy.init_node("detect")
     start = time.time()
     model = YOLO("./models/best.pt")
+
     gripperState = "o"
     gripperArmState = "forward"
     print("done init")
-    pubCoords = rospy.Publisher("coords", CoordsMatrix, queue_size=10)
-    pubSiloState = rospy.Publisher("silo_state", Int32MultiArray, queue_size=10)
-    pubGripperControl = rospy.Publisher("gripperControl", GripperControl, queue_size=10)
-    pubMotorControl = rospy.Publisher("motorControl", MotorControl, queue_size=10)
+
+    pubGripperControl = rospy.Publisher(
+        "gripper_control", GripperControl, queue_size=10
+    )
+    pubMotorControl = rospy.Publisher("motor_control", MotorControl, queue_size=10)
     colorSub = message_filters.Subscriber("/camera/color/image_raw", Image)
     depthSub = message_filters.Subscriber("/camera/depth/image_raw", Image)
-    ts = message_filters.ApproximateTimeSynchronizer([colorSub, depthSub], 10, 0.1, allow_headerless=True)
+    ts = message_filters.ApproximateTimeSynchronizer(
+        [colorSub, depthSub], 10, 0.1, allow_headerless=True
+    )
+    # ts = message_filters.TimeSynchronizer([colorSub, depthSub], 10)
+
     ts.registerCallback(callback)
     print("done sub/pub, callback")
     rospy.spin()
