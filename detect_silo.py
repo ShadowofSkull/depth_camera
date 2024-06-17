@@ -64,7 +64,7 @@ def callback(colorFrame, depthFrame):
             clsName = names[cls]
 
             # Skip if clsName is not red or blue ball
-            if clsName not in ["red_ball", "blue_ball"] or conf < 50:
+            if clsName not in ["red_ball", "blue_ball", ""] or conf < 50:
                 continue
 
             # Obtain xy which is centre coords of the box
@@ -73,8 +73,13 @@ def callback(colorFrame, depthFrame):
             y = int(y)
 
             # Extract the coordinates and dimensions of the bounding box
-            x_center, y_center, width, height = xywh
-
+            try:
+                x_center, y_center, width, height = xywh[0]
+                x_center = int(x_center)
+                y_center = int(y_center)
+            except:
+                print("no xywh")
+                return
             # Calculate the height of each section (one-third of the original height)
             section_height = height / 3
 
@@ -87,7 +92,9 @@ def callback(colorFrame, depthFrame):
             box1 = [x_center, y_center1, width, section_height]
             box2 = [x_center, y_center2, width, section_height]
             box3 = [x_center, y_center3, width, section_height]
-
+            # xywh 
+            # left = x - w/2 right = x + w/2
+            # if ball1_y > ball2_y  layer2 = ball1 layer 1 = ball2
             # print the box1,2,3 x_center, y, width and height
             print(f'box1 : {box1}, box2 : {box2}, box 3 : {box3}')
 
@@ -131,7 +138,7 @@ def updateSiloMatrix(realXZs):
 
     # Reset silo matrix to zeros
     silo_matrix = np.zeros((3, 5), dtype=int)
-
+    
     for realXZ in realXZs:
         real_x, depth, clsName = realXZ
         if clsName == "red_ball":
