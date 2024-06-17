@@ -127,8 +127,9 @@ def callback(colorFrame, depthFrame):
                 silo.remove(ball)
                 silo.append(ball)
     print(f"{siloMatrix_y}\n")
-
+    siloNum = 0
     for silo in siloMatrix_y:
+        layer = 0
         for ball in silo:
             if ball[1] == "red_ball":
                 color = 1
@@ -138,9 +139,9 @@ def callback(colorFrame, depthFrame):
                 color = 3
             else:
                 color = 0
-            print(ball)
-            ball = color
-            print(ball)
+            siloMatrix_y[siloNum][layer] = color
+            layer += 1
+        siloNum += 1
     print(siloMatrix_y)
     # while True:
     #     teamBall = findClosestBall(teamBallRealXZs)
