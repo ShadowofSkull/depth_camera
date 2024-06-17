@@ -32,7 +32,7 @@ def image_callback(msg):
 
     # Find contours in the mask
     contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-
+    print(contours)
     # Draw the contours on the original image
     cv2.drawContours(cv_image, contours, -1, (0, 255, 0), 3)
 
