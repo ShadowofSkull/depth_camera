@@ -32,6 +32,7 @@ def callback(colorFrame, depthFrame):
         colorFrame_cv = bridge.imgmsg_to_cv2(colorFrame, "bgr8")
         colorFrame_draw = colorFrame_cv.copy()  # Copy for drawing purposes
         depthFrame = bridge.imgmsg_to_cv2(depthFrame, "passthrough")
+        draw_box = bridge.imgmsg_to_cv2(colorFrame, "bgr8")
     except CvBridgeError as e:
         print(e)
         return
@@ -46,13 +47,16 @@ def callback(colorFrame, depthFrame):
 
     # Initialize list to store coordinates of boxes centre point
     realXZs = []
+
     for result in results:
-        # Obtain classes name model can detect
+
+        # Obtain class names the model can detect
         names = result.names
         print(f"names: {names}")
         boxes = result.boxes
         for box in boxes:
             xywh = box.xywh
+
             # Convert tensor to numpy ndarray
             xywh = xywh.to("cpu").detach().numpy().copy()
             conf = int(box.conf[0] * 100)
@@ -68,13 +72,33 @@ def callback(colorFrame, depthFrame):
             x = int(x)
             y = int(y)
 
+            # Extract the coordinates and dimensions of the bounding box
+            x_center, y_center, width, height = xywh
+
+            # Calculate the height of each section (one-third of the original height)
+            section_height = height / 3
+
+            # Calculate the y-coordinates for the centers of the new bounding boxes
+            y_center1 = y_center - section_height
+            y_center2 = y_center
+            y_center3 = y_center + section_height
+
+            # Create new bounding boxes for each section
+            box1 = [x_center, y_center1, width, section_height]
+            box2 = [x_center, y_center2, width, section_height]
+            box3 = [x_center, y_center3, width, section_height]
+
+            # print the box1,2,3 x_center, y, width and height
+            print(f'box1 : {box1}, box2 : {box2}, box 3 : {box3}')
+
+            # Calculate depth and real x-coordinate
             depth = getDepth(x, y, conf, clsName, depthFrame)
             real_x = calcX(depth, x, colorFrame_cv)
             realXZs.append([real_x, depth, clsName])
             print(f"realx: {real_x}, depth: {depth}, clsName: {clsName}")
 
     # Update the silo matrix and draw bounding boxes around detected silos
-    updateSiloMatrix(realXZs, colorFrame_draw)
+    updateSiloMatrix(realXZs)
 
     # Publish the matrix to a ROS topic
     msg = Int32MultiArray(data=silo_matrix.flatten().tolist())
@@ -83,8 +107,18 @@ def callback(colorFrame, depthFrame):
 
     # Display the annotated frame with silo bounding boxes
     try:
-        for box in silo_boxes:
-            cv2.rectangle(colorFrame_draw, (box[0], box[1]), (box[2], box[3]), (0, 255, 0), thickness=2)
+
+        # Draw the new bounding boxes on the image
+        #box 1 
+        cv2.rectangle(colorFrame_draw, (int(x_center - width / 2), int(y_center1 - section_height / 2)), 
+                        (int(x_center + width / 2), int(y_center1 + section_height / 2)), (0, 255, 0), 2)
+        #box 2 
+        cv2.rectangle(colorFrame_draw, (int(x_center - width / 2), int(y_center2 - section_height / 2)), 
+                        (int(x_center + width / 2), int(y_center2 + section_height / 2)), (0, 255, 0), 2)
+        #box 3
+        cv2.rectangle(colorFrame_draw, (int(x_center - width / 2), int(y_center3 - section_height / 2)), 
+                        (int(x_center + width / 2), int(y_center3 + section_height / 2)), (0, 255, 0), 2)
+
         cv2.imshow("YOLOv8 Inference", colorFrame_draw)
         cv2.waitKey(1)
     except Exception as e:
@@ -92,42 +126,27 @@ def callback(colorFrame, depthFrame):
 
     # Motor and Gripper control code (omitted for brevity)
 
-def updateSiloMatrix(realXZs, frame):
-    global silo_matrix, silo_boxes
-    # Clear the matrix and silo boxes
-    silo_matrix.fill(0)
-    silo_boxes = []
+def updateSiloMatrix(realXZs):
+    global silo_matrix
 
-    # Determine the silo boundaries dynamically based on detected balls
-    for x, z, clsName in realXZs:
-        # Assuming each silo is 100 pixels wide and there are 5 silos
-        silo_width = frame.shape[1] // 5
+    # Reset silo matrix to zeros
+    silo_matrix = np.zeros((3, 5), dtype=int)
 
-        # Determine the silo index based on x coordinate
-        silo_idx = x // silo_width
-        if silo_idx >= 5:
-            continue  # Skip if somehow outside the frame (shouldn't happen)
-
-        # Determine the row based on depth (z value)
-        if z < 1000:
-            row = 0
-        elif z < 2000:
-            row = 1
-        else:
-            row = 2
-
-        # Set the matrix value based on the ball color
+    for realXZ in realXZs:
+        real_x, depth, clsName = realXZ
         if clsName == "red_ball":
-            silo_matrix[row, silo_idx] = 1
+            ball_value = 1
         elif clsName == "blue_ball":
-            silo_matrix[row, silo_idx] = 2
+            ball_value = 2
+        else:
+            ball_value = 0
 
-        # Calculate bounding box coordinates for the detected silo (traffic light style)
-        box_x_min = int(silo_idx * silo_width)
-        box_x_max = int((silo_idx + 1) * silo_width)
-        box_y_min = 0
-        box_y_max = frame.shape[0]
-        silo_boxes.append((box_x_min, box_y_min, box_x_max, box_y_max))
+        # Determine the section where the ball falls based on the real x-coordinate
+        section_index = min(max(int((real_x + 2.5) // 2.5), 0), 4)  # 0-4
+        silo_matrix[2][section_index] = ball_value  # Update the bottom row of the matrix
+
+    return silo_matrix
+
 
 def calcX(depth, x, colorFrame):
     resolution_w = colorFrame.shape[1]
@@ -162,4 +181,3 @@ if __name__ == "__main__":
     ts.registerCallback(callback)
     print("done sub/pub, callback")
     rospy.spin()
-
