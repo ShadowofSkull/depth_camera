@@ -150,6 +150,7 @@ def publishControl(closestBallXZ):
 
     print(gripperMsg)
     pubGripperControl.publish(gripperMsg)
+    
 
 
 
