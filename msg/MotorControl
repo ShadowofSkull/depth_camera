@@ -1,1 +1,2 @@
-string command
+int16 x
+int16 z
