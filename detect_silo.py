@@ -47,6 +47,7 @@ def callback(colorFrame, depthFrame):
     teamBallRealXZs = []
     purpleBallRealXZs = []
     silos = []
+    silosRealXZ = []
     balls = []
     for result in results:
         # Obtain classes name model can detect
@@ -73,7 +74,10 @@ def callback(colorFrame, depthFrame):
             if clsName in ["Silo"]:
                 # lower upper x bound of 5 silos
                 print(f"x: {x}, w:{w}")
-                silos.append([x, w])
+                silos.append([x, w, y])
+                depth = getDepth(x, y, conf, clsName, depthFrame)
+                real_x = calcX(depth, x, colorFrame)
+                silosRealXZ.append([real_x, depth])
                 continue
 
             # For processing balls in silos later
@@ -95,18 +99,67 @@ def callback(colorFrame, depthFrame):
         print("No team ball found, robot stop")
         return
 
+    siloMatrix = createSiloMatrix(silos, silosRealXZ, balls)
+    # Determine best silo to place the ball based on priorities
+    # findBestSilo(siloMatrix, team_color)
+
+    # def check_v_goal(matrix):
+    #     team_color = 1  # Assuming 1 represents team color
+    #     v_goal_count = 0
+
+    #     for silo in matrix:
+    #         if silo[2] == team_color and silo.count(team_color) >= 2:
+    #             v_goal_count += 1
+
+    #     if v_goal_count >= 3:
+    #         rospy.loginfo("V Goal achieved! Team wins!")
+    #         # Additional actions for V Goal can be added here
+
+    # def findBestSilo(siloMatrix, team_color=1):
+    #     best_silo = -1
+    #     priority_1 = []
+    #     priority_2 = []
+    #     priority_3 = []
+
+    #     for i, silo in enumerate(siloMatrix):
+    #         if silo[1] == 2:  # Priority 1
+    #             priority_1.append(i)
+    #         elif silo[1] == 1:  # Priority 2
+    #             priority_2.append(i)
+    #         elif silo[0] == 0:  # Priority 3
+    #             priority_3.append(i)
+
+    #     if priority_1:
+    #         best_silo = priority_1[0]  # Choose first silo with opponentBall in second row
+    #     elif priority_2:
+    #         best_silo = priority_2[0]  # Choose first silo with teamBall in second row
+    #     elif priority_3:
+    #         best_silo = priority_3[0]  # Choose first empty silo
+
+    #     # Check for V Goal condition
+    #     check_v_goal(siloMatrix)
+    #     return best_silo
+
+    if not silos:
+        publishControl(teamBallRealXZs[0], siloMatrix)
+    else:
+        publishControl()
+
+
+def createSiloMatrix(silos, silosRealXZ, balls):
     # make it so that it sort only using x value
     def sortByFirstEle(e):
         return e[0]
-    # it is 2d array so two values and by providing key to only sort using the first val which is x 
+
+    # it is 2d array so two values and by providing key to only sort using the first val which is x
     silos.sort(key=sortByFirstEle)
+    silosRealXZ.sort(key=sortByFirstEle)
+
     # Assigning lower and upper x axis bound of each silo
     silosBound = [[silo[0] - silo[1] // 2, silo[0] + silo[1] // 2] for silo in silos]
     print(silosBound)
     # Setting the matrix as empty, 9999 is so when using sorting algo it goes to the back as it represent the top of silo
-    siloMatrix = [
-        [[9999, "empty"], [9999, "empty"], [9999, "empty"]] for _ in range(5)
-    ]
+    siloMatrix = [[[9999, "empty"], [9999, "empty"], [9999, "empty"]] for _ in range(5)]
 
     # Checking which silo the ball belong to by checking if its center x axis is within silo boundary
     siloNum = 0
@@ -127,7 +180,7 @@ def callback(colorFrame, depthFrame):
     # Sort the y value in each silos in ascending order
     for silo in siloMatrix:
         silo.sort()
-        
+
     print(f"{siloMatrix}\n")
 
     # Replacing the matrix with single int values that represent different ball color
@@ -146,46 +199,7 @@ def callback(colorFrame, depthFrame):
             siloMatrix[siloNum][layer] = color
             layer += 1
         siloNum += 1
-    print(siloMatrix)
-
-    # findBestSilo(siloMatrix)
-
-    # Avoid going for red ball that are blocked by purple ball
-    while True:
-        teamBall = findClosestBall(teamBallRealXZs)
-        tBallX, tBallZ = teamBall[0], teamBall[1]
-        purpleBall = findClosestBall(purpleBallRealXZs)
-        pBallX, pBallZ = purpleBall[0], purpleBall[1]
-        if tBallX < pBallX - 300 or tBallX > pBallX + 300:
-            print("balls not on same x axis")
-            break
-
-        if tBallZ <= pBallZ:
-            print("team ball in front of purple ball")
-            break
-
-        print("purple ball blocking")
-        teamBallRealXZs.remove(teamBall)
-
-        if not teamBallRealXZs:
-            print("No suitable team ball found")
-            return
-
-    publishControl(teamBall)
-
-
-#1. Choosing top to achieve blockage and one mua vang
-#2. Bottom layer to force them to put second which allow us to choose top
-#3. If second layer only option check if bottom is our color or just wait for top
-# approach remove empty so can directly len size of silo to know how many layer are filled
-def findBestSilo(siloMatrix):
-    # for layer in range(2):
-    #     for silo in range(len(siloMatrix)):
-    #         if 
-    # for layer in range(len(siloMatrix[0])):
-    #     for silo in range(len(siloMatrix)):
-    #         # 1 is red,2 is blue,3 is purple, 0 is none
-    #         if siloMatrix[silo][layer] == 
+    return siloMatrix
 
 
 def findClosestBall(ballRealXZs):
@@ -232,7 +246,7 @@ def publishControl(coordinatesToApproach):
 
     print(gripperMsg)
     pubGripperControl.publish(gripperMsg)
-    # To control change of decision 
+    # To control change of decision
     time.sleep(1)
 
 
