@@ -4,6 +4,7 @@ import time
 import torch
 import rospy
 from sensor_msgs.msg import Image
+from std_msgs.msg import String
 from astra_camera.msg import MotorControl, GripperControl, SiloMatrix
 import cv2
 from cv_bridge import CvBridge, CvBridgeError
@@ -98,52 +99,67 @@ def callback(colorFrame, depthFrame):
     if not teamBallRealXZs:
         print("No team ball found, robot stop")
         return
-
+    closestTeamBallXZ = findClosestBall(teamBallRealXZs)
+    closestPurpleBallXZ = findClosestBall(purpleBallRealXZs)
+    # 1 is red, 2 is blue
+    team_color = 1
     siloMatrix = createSiloMatrix(silos, silosRealXZ, balls)
     # Determine best silo to place the ball based on priorities
-    # findBestSilo(siloMatrix, team_color)
+    bestSiloIdx = findBestSilo(siloMatrix, team_color)
+    # Using idx find real x z
+    bestSiloXZ = silosRealXZ[bestSiloIdx]
+    # Publish to gripper and motor depending on whether we are facing balls or silos
+    if not silos:
+        ballPublishControl(closestTeamBallXZ, closestPurpleBallXZ)
+    else:
+        siloPublishControl(bestSiloXZ)
 
-    # def check_v_goal(matrix):
-    #     team_color = 1  # Assuming 1 represents team color
-    #     v_goal_count = 0
 
-    #     for silo in matrix:
-    #         if silo[2] == team_color and silo.count(team_color) >= 2:
-    #             v_goal_count += 1
+# END OF CALLBACK
 
-    #     if v_goal_count >= 3:
-    #         rospy.loginfo("V Goal achieved! Team wins!")
-    #         # Additional actions for V Goal can be added here
 
-    # def findBestSilo(siloMatrix, team_color=1):
-    #     best_silo = -1
-    #     priority_1 = []
-    #     priority_2 = []
-    #     priority_3 = []
+def check_v_goal(matrix):
+    team_color = 1  # Assuming 1 represents team color
+    v_goal_count = 0
 
-    #     for i, silo in enumerate(siloMatrix):
-    #         if silo[1] == 2:  # Priority 1
-    #             priority_1.append(i)
-    #         elif silo[1] == 1:  # Priority 2
-    #             priority_2.append(i)
-    #         elif silo[0] == 0:  # Priority 3
-    #             priority_3.append(i)
+    for silo in matrix:
+        if silo[2] == team_color and silo.count(team_color) >= 2:
+            v_goal_count += 1
 
-    #     if priority_1:
-    #         best_silo = priority_1[0]  # Choose first silo with opponentBall in second row
-    #     elif priority_2:
-    #         best_silo = priority_2[0]  # Choose first silo with teamBall in second row
-    #     elif priority_3:
-    #         best_silo = priority_3[0]  # Choose first empty silo
+    if v_goal_count >= 3:
+        rospy.loginfo("V Goal achieved! Team wins!")
+        time.sleep(10)
+        # Additional actions for V Goal can be added here
 
-    #     # Check for V Goal condition
-    #     check_v_goal(siloMatrix)
-    #     return best_silo
 
-    # if not silos:
-    #     publishControl(teamBallRealXZs[0], siloMatrix)
-    # else:
-    #     publishControl()
+def findBestSilo(siloMatrix, team_color=1):
+    best_silo = -1
+    priority_1 = []
+    priority_2 = []
+    priority_3 = []
+    if team_color == 1:
+        opposite_team_color = 2
+    elif team_color == 2:
+        opposite_team_color = 1
+    for i, silo in enumerate(siloMatrix):
+        if silo[1] == opposite_team_color:  # Priority 1
+            priority_1.append(i)
+        elif silo[1] == team_color:  # Priority 2
+            priority_2.append(i)
+        # 0 is empty
+        elif silo[0] == 0:  # Priority 3
+            priority_3.append(i)
+
+    if priority_1:
+        best_silo = priority_1[0]  # Choose first silo with opponentBall in second row
+    elif priority_2:
+        best_silo = priority_2[0]  # Choose first silo with teamBall in second row
+    elif priority_3:
+        best_silo = priority_3[0]  # Choose first empty silo
+
+    # Check for V Goal condition
+    check_v_goal(siloMatrix)
+    return best_silo
 
 
 def createSiloMatrix(silos, silosRealXZ, balls):
@@ -217,47 +233,63 @@ def findClosestBall(ballRealXZs):
         print("list empty")
         return []
 
+    return closestBallXZ
 
-def publishControl(coordinatesToApproach, siloMatrix):
+
+def siloPublishControl(bestSiloXZ):
     # Motor publish
     motorMsg = MotorControl()
-    print(coordinatesToApproach[0])
-    motorMsg.horizontal = coordinatesToApproach[0]
-    motorMsg.forward = coordinatesToApproach[1]
+    motorMsg.horizontal = bestSiloXZ[0]
+    motorMsg.forward = bestSiloXZ[1]
     print(motorMsg)
     pubMotorControl.publish(motorMsg)
+
     # Gripper publish
-    global gripperState, gripperArmState
-
     gripperMsg = GripperControl()
-    if gripperState == "o":
-        gripperState = "c"
-        gripperMsg.grip = gripperState
-    elif gripperState == "c":
-        gripperState = "o"
-        gripperMsg.grip = gripperState
-
-    if gripperArmState == "forward":
-        gripperArmState = "backward"
-        gripperMsg.flip = gripperArmState
-    elif gripperArmState == "backward":
-        gripperArmState = "forward"
-        gripperMsg.flip = gripperArmState
+    # ultrasonic in mm
+    if ultrasonic == "y":
+        gripperMsg.grip = "o"
+        time.sleep(2)
+        gripperMsg.flip = "forward"
 
     print(gripperMsg)
     pubGripperControl.publish(gripperMsg)
 
-    siloMatrixMsg = SiloMatrix()
-    siloMatrixMsg.silo1 = siloMatrix[0]
-    siloMatrixMsg.silo2 = siloMatrix[1]
-    siloMatrixMsg.silo3 = siloMatrix[2]
-    siloMatrixMsg.silo4 = siloMatrix[3]
-    siloMatrixMsg.silo5 = siloMatrix[4]
+    # To control delay of decision
+    time.sleep(5)
 
-    print(siloMatrixMsg)
-    pubSiloMatrix.publish(siloMatrixMsg)
+
+def ballPublishControl(closestTeamBallXZ, closestPurpleBallXZ):
+    # Motor publish
+    motorMsg = MotorControl()
+    teamBallX, teamBallZ = closestTeamBallXZ
+    motorMsg.horizontal = teamBallX
+    motorMsg.forward = teamBallZ
+    print(motorMsg)
+    pubMotorControl.publish(motorMsg)
+
+    # Gripper publish
+    gripperMsg = GripperControl()
+    purpleBallX, purpleBallZ = closestPurpleBallXZ
+    # Close when ball enter gripper range and flip backward
+    if ir == "y":
+        gripperMsg.grip = "c"
+        time.sleep(2)
+        gripperMsg.flip = "backward"
+        closestBall = min(teamBallZ, purpleBallZ)
+        # if team ball is closer, keep gripping team ball, or else release purple ball
+        if closestBall == teamBallZ:
+            gripperMsg.grip = "c"
+        elif closestBall == purpleBallZ:
+            gripperMsg.grip = "o"
+            time.sleep(2)
+            gripperMsg.flip = "forward"
+
+    print(gripperMsg)
+    pubGripperControl.publish(gripperMsg)
+
     # To control change of decision
-    time.sleep(1)
+    time.sleep(5)
 
 
 def calcX(depth, x, colorFrame):
@@ -291,13 +323,24 @@ def getDepth(x, y, conf, clsName, depthFrame):
     return int(depth)
 
 
+def irCallback(msg):
+    global ir
+    ir = msg.data
+
+
+def ultrasonicCallback(msg):
+    global ultrasonic
+    ultrasonic = msg.data
+
+
 if __name__ == "__main__":
     rospy.init_node("detect")
     start = time.time()
     model = YOLO("./models/best.pt")
 
-    gripperState = "o"
-    gripperArmState = "forward"
+    # y for detected, n for no detection
+    ir = "n"
+    ultrasonic = "n"
     print("done init")
     pubSiloMatrix = rospy.Publisher("silo_matrix", SiloMatrix, queue_size=10)
     pubGripperControl = rospy.Publisher(
@@ -306,6 +349,8 @@ if __name__ == "__main__":
     pubMotorControl = rospy.Publisher("motor_control", MotorControl, queue_size=10)
     colorSub = message_filters.Subscriber("/camera/color/image_raw", Image)
     depthSub = message_filters.Subscriber("/camera/depth/image_raw", Image)
+    irSub = rospy.Subscriber("BallInGripper", String, irCallback)
+    ultrasonicSub = rospy.Subscriber("RobotInFrontOfSilo", String, ultrasonicCallback)
     ts = message_filters.ApproximateTimeSynchronizer(
         [colorSub, depthSub], 10, 0.1, allow_headerless=True
     )
