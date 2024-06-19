@@ -128,6 +128,7 @@ def check_v_goal(matrix):
 
     if v_goal_count >= 3:
         rospy.loginfo("V Goal achieved! Team wins!")
+        time.sleep(10)
         # Additional actions for V Goal can be added here
 
 
@@ -232,6 +233,8 @@ def findClosestBall(ballRealXZs):
         print("list empty")
         return []
 
+    return closestBallXZ
+
 
 def siloPublishControl(bestSiloXZ):
     # Motor publish
@@ -269,11 +272,7 @@ def ballPublishControl(closestTeamBallXZ, closestPurpleBallXZ):
     gripperMsg = GripperControl()
     purpleBallX, purpleBallZ = closestPurpleBallXZ
     # Close when ball enter gripper range and flip backward
-    if ir == "n":
-        gripperMsg.grip = "o"
-        time.sleep(2)
-        gripperMsg.flip = "forward"
-    elif ir == "y":
+    if ir == "y":
         gripperMsg.grip = "c"
         time.sleep(2)
         gripperMsg.flip = "backward"
