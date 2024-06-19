@@ -140,10 +140,10 @@ def callback(colorFrame, depthFrame):
     #     check_v_goal(siloMatrix)
     #     return best_silo
 
-    if not silos:
-        publishControl(teamBallRealXZs[0], siloMatrix)
-    else:
-        publishControl()
+    # if not silos:
+    #     publishControl(teamBallRealXZs[0], siloMatrix)
+    # else:
+    #     publishControl()
 
 
 def createSiloMatrix(silos, silosRealXZ, balls):

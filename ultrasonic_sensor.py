@@ -1,3 +1,7 @@
+#!/usr/bin/env python
+
+import rospy
+from std_msgs.msg import String
 import Jetson.GPIO as GPIO
 import time
 
@@ -15,6 +19,10 @@ GPIO.setup(GPIO_TRIGGER1, GPIO.OUT)
 GPIO.setup(GPIO_ECHO1, GPIO.IN)
 GPIO.setup(GPIO_TRIGGER2, GPIO.OUT)
 GPIO.setup(GPIO_ECHO2, GPIO.IN)
+
+# ROS initialization
+rospy.init_node('ultrasonic_sensor_publisher')
+pub = rospy.Publisher('InFrontOfSilo', String, queue_size=10)
 
 def distance(trigger_pin, echo_pin):
     # Set Trigger to HIGH
@@ -46,14 +54,25 @@ def distance(trigger_pin, echo_pin):
 
 if __name__ == "__main__":
     try:
-        while True:
+        while not rospy.is_shutdown():
             dist1 = distance(GPIO_TRIGGER1, GPIO_ECHO1)
             dist2 = distance(GPIO_TRIGGER2, GPIO_ECHO2)
-            print("Measured Distance Sensor 1 = %.1f cm" % dist1)
-            print("Measured Distance Sensor 2 = %.1f cm" % dist2)
+            rospy.loginfo("Measured Distance Sensor 1 = %.1f cm" % dist1)
+            rospy.loginfo("Measured Distance Sensor 2 = %.1f cm" % dist2)
+
+            # Determine if sensor 1 is in front of silo
+            if dist1 < 50: # 50 cm. Adjust this value after calibrate
+                status = "y"  # Yes, sensor 1 is in front of silo
+            else:
+                status = "n"  # No, sensor 1 is not in front of silo
+
+            # Publish status to ROS topic
+            pub.publish(status)
+
             time.sleep(0.5)
 
     except KeyboardInterrupt:
         print("Measurement stopped by User")
+    finally:
         GPIO.cleanup()
 
