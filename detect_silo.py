@@ -30,8 +30,14 @@ def callback(colorFrame, depthFrame):
     # Convert ROS msg to cv nparray that's suitable for model
     bridge = CvBridge()
     try:
-        colorFrame = bridge.imgmsg_to_cv2(colorFrame, "bgr8")
-        depthFrame = bridge.imgmsg_to_cv2(depthFrame, "passthrough")
+        if gripperArmState == "backward":
+            colorFrame = cv2.flip(colorFrame, -1)
+            depthFrame = cv2.flip(depthFrame, -1)
+            colorFrame = bridge.imgmsg_to_cv2(colorFrame, "bgr8")
+            depthFrame = bridge.imgmsg_to_cv2(depthFrame, "passthrough")
+        elif gripperArmState == "forward":
+            colorFrame = bridge.imgmsg_to_cv2(colorFrame, "bgr8")
+            depthFrame = bridge.imgmsg_to_cv2(depthFrame, "passthrough")
     except CvBridgeError as e:
         print(e)
         return
@@ -346,6 +352,7 @@ if __name__ == "__main__":
     model = YOLO("./models/best.pt")
 
     # y for detected, n for no detection
+    gripperArmState = "forward"
     ir = "n"
     ultrasonic = "n"
     print("done init")
