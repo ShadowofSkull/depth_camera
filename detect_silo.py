@@ -101,17 +101,18 @@ def callback(colorFrame, depthFrame):
         return
     closestTeamBallXZ = findClosestBall(teamBallRealXZs)
     closestPurpleBallXZ = findClosestBall(purpleBallRealXZs)
-    # 1 is red, 2 is blue
-    team_color = 1
-    siloMatrix = createSiloMatrix(silos, silosRealXZ, balls)
-    # Determine best silo to place the ball based on priorities
-    bestSiloIdx = findBestSilo(siloMatrix, team_color)
-    # Using idx find real x z
-    bestSiloXZ = silosRealXZ[bestSiloIdx]
+
     # Publish to gripper and motor depending on whether we are facing balls or silos
     if not silos:
         ballPublishControl(closestTeamBallXZ, closestPurpleBallXZ)
     else:
+        # 1 is red, 2 is blue
+        team_color = 1
+        siloMatrix = createSiloMatrix(silos, silosRealXZ, balls)
+        # Determine best silo to place the ball based on priorities
+        bestSiloIdx = findBestSilo(siloMatrix, team_color)
+        # Using idx find real x z
+        bestSiloXZ = silosRealXZ[bestSiloIdx]
         siloPublishControl(bestSiloXZ)
 
 
@@ -349,8 +350,8 @@ if __name__ == "__main__":
     pubMotorControl = rospy.Publisher("motor_control", MotorControl, queue_size=10)
     colorSub = message_filters.Subscriber("/camera/color/image_raw", Image)
     depthSub = message_filters.Subscriber("/camera/depth/image_raw", Image)
-    irSub = rospy.Subscriber("BallInGripper", String, irCallback)
-    ultrasonicSub = rospy.Subscriber("RobotInFrontOfSilo", String, ultrasonicCallback)
+    # irSub = rospy.Subscriber("BallInGripper", String, irCallback)
+    # ultrasonicSub = rospy.Subscriber("InFrontOfSilo", String, ultrasonicCallback)
     ts = message_filters.ApproximateTimeSynchronizer(
         [colorSub, depthSub], 10, 0.1, allow_headerless=True
     )
