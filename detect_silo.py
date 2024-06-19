@@ -4,7 +4,7 @@ import time
 import torch
 import rospy
 from sensor_msgs.msg import Image
-from astra_camera.msg import CoordsMatrix, Coords, XZ, XZs, MotorControl, GripperControl
+from astra_camera.msg import MotorControl, GripperControl, SiloMatrix
 import cv2
 from cv_bridge import CvBridge, CvBridgeError
 from ultralytics import YOLO
@@ -218,7 +218,7 @@ def findClosestBall(ballRealXZs):
         return []
 
 
-def publishControl(coordinatesToApproach):
+def publishControl(coordinatesToApproach, siloMatrix):
     # Motor publish
     motorMsg = MotorControl()
     print(coordinatesToApproach[0])
@@ -246,6 +246,16 @@ def publishControl(coordinatesToApproach):
 
     print(gripperMsg)
     pubGripperControl.publish(gripperMsg)
+
+    siloMatrixMsg = SiloMatrix()
+    siloMatrixMsg.silo1 = siloMatrix[0]
+    siloMatrixMsg.silo2 = siloMatrix[1]
+    siloMatrixMsg.silo3 = siloMatrix[2]
+    siloMatrixMsg.silo4 = siloMatrix[3]
+    siloMatrixMsg.silo5 = siloMatrix[4]
+
+    print(siloMatrixMsg)
+    pubSiloMatrix.publish(siloMatrixMsg)
     # To control change of decision
     time.sleep(1)
 
@@ -289,7 +299,7 @@ if __name__ == "__main__":
     gripperState = "o"
     gripperArmState = "forward"
     print("done init")
-
+    pubSiloMatrix = rospy.Publisher("silo_matrix", SiloMatrix, queue_size=10)
     pubGripperControl = rospy.Publisher(
         "gripper_control", GripperControl, queue_size=10
     )
