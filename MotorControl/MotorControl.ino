@@ -1,169 +1,147 @@
-#include <util/atomic.h> // For the ATOMIC_BLOCK macro
 #include <ros.h>
-#include <std_msgs/Int32MultiArray.h>
+#include <std_msgs/Float32.h>
+#include <astra_camera/MotorControl.h>  // Replace 'your_package_name' with your actual ROS package name
+
+#include <util/atomic.h> // For the ATOMIC_BLOCK macro
 #include "CytronMotorDriver.h"
+#include <math.h>
 
-// Define pins for Motor 1
-#define ENCA_M1 2
-#define ENCB_M1 3
-#define PWM_M1 4
-#define DIR_M1 5
+#define ENCA1 18 // Encoder 1 (LB)
+#define ENCB1 17 // Encoder 1
+#define ENCA2 2  // Encoder 2 (LF)
+#define ENCB2 3  // Encoder 2
+#define ENCA3 19 // Encoder 3 (RF)
+#define ENCB3 20 // Encoder 3
+#define ENCA4 21 // Encoder 4 (RB)
+#define ENCB4 16 // Encoder 4
 
-// Define pins for Motor 2
-#define ENCA_M2 8
-#define ENCB_M2 9
-#define PWM_M2 6
-#define DIR_M2 7
+volatile int posi1 = 0, posi2 = 0, posi3 = 0, posi4 = 0; // Positions
+int pos1, pos2, pos3, pos4;
+long prevT = 0;
+float eprev1 = 0, eprev2 = 0, eprev3 = 0, eprev4 = 0;
+float eintegral1 = 0, eintegral2 = 0, eintegral3 = 0, eintegral4 = 0;
+float u1 = 0, u2 = 0, u3 = 0, u4 = 0;
+float target1, target2, target3, target4;
 
-// Define pins for Motor 3
-#define ENCA_M3 12
-#define ENCB_M3 13
-#define PWM_M3 10
-#define DIR_M3 11
-
-// Define pins for Motor 4
-#define ENCA_M4 16
-#define ENCB_M4 17
-#define PWM_M4 14
-#define DIR_M4 15
-
-// Motor instances
-CytronMD motor1(PWM_M1, DIR_M1);
-CytronMD motor2(PWM_M2, DIR_M2);
-CytronMD motor3(PWM_M3, DIR_M3);
-CytronMD motor4(PWM_M4, DIR_M4);
-
-volatile int posi1 = 0; // Position for Motor 1
-volatile int posi2 = 0; // Position for Motor 2
-volatile int posi3 = 0; // Position for Motor 3
-volatile int posi4 = 0; // Position for Motor 4
-
-int pos1 = 0; // Actual position for Motor 1
-int pos2 = 0; // Actual position for Motor 2
-int pos3 = 0; // Actual position for Motor 3
-int pos4 = 0; // Actual position for Motor 4
-
-long prevT1 = 0; // Previous time for Motor 1
-long prevT2 = 0; // Previous time for Motor 2
-long prevT3 = 0; // Previous time for Motor 3
-long prevT4 = 0; // Previous time for Motor 4
-
-float eprev1 = 0; // Previous error for Motor 1
-float eprev2 = 0; // Previous error for Motor 2
-float eprev3 = 0; // Previous error for Motor 3
-float eprev4 = 0; // Previous error for Motor 4
-
-float eintegral1 = 0; // Integral error for Motor 1
-float eintegral2 = 0; // Integral error for Motor 2
-float eintegral3 = 0; // Integral error for Motor 3
-float eintegral4 = 0; // Integral error for Motor 4
+CytronMD motor1(PWM_DIR, 4, 5); // Motor 1 (Left Back)
+CytronMD motor2(PWM_DIR, 6, 7); // Motor 2 (Left Front)
+CytronMD motor3(PWM_DIR, 8, 9); // Motor 3 (Right Front)
+CytronMD motor4(PWM_DIR, 10, 11); // Motor 4 (Right Back)
 
 ros::NodeHandle nh;
 
-int targets[4] = {0, 0, 0, 0}; // Target positions for the motors
-
-void targetCallback(const std_msgs::Int32MultiArray& msg) {
-  if (msg.data_length == 4) {
-    targets[0] = msg.data[0];
-    targets[1] = msg.data[1];
-    targets[2] = msg.data[2];
-    targets[3] = msg.data[3];
-  }
+// Define callback function to receive motor control messages
+void motorControlCallback(const astra_camera::SiloPath& msg) {
+  target1 = msg.motor1_speed;  // Set target speed for motor 1
+  target2 = msg.motor2_speed;  // Set target speed for motor 2
+  target3 = msg.motor3_speed;  // Set target speed for motor 3
+  target4 = msg.motor4_speed;  // Set target speed for motor 4
 }
 
-ros::Subscriber<std_msgs::Int32MultiArray> sub("silo_path", &targetCallback);
+ros::Subscriber<astra_camera::SiloPath> sub("check_the_published_topic", motorControlCallback);
 
 void setup() {
   Serial.begin(115200);
-
-  // ROS setup
   nh.initNode();
   nh.subscribe(sub);
 
-  // Encoder pins setup for Motor 1
-  pinMode(ENCA_M1, INPUT_PULLUP);
-  pinMode(ENCB_M1, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(ENCA_M1), readEncoder1, RISING);
+  // Set encoder pins as inputs with pull-up resistors
+  pinMode(ENCA1, INPUT_PULLUP);
+  pinMode(ENCB1, INPUT_PULLUP);
+  pinMode(ENCA2, INPUT_PULLUP);
+  pinMode(ENCB2, INPUT_PULLUP);
+  pinMode(ENCA3, INPUT_PULLUP);
+  pinMode(ENCB3, INPUT_PULLUP);
+  pinMode(ENCA4, INPUT_PULLUP);
+  pinMode(ENCB4, INPUT_PULLUP);
 
-  // Encoder pins setup for Motor 2
-  pinMode(ENCA_M2, INPUT_PULLUP);
-  pinMode(ENCB_M2, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(ENCA_M2), readEncoder2, RISING);
-
-  // Encoder pins setup for Motor 3
-  pinMode(ENCA_M3, INPUT_PULLUP);
-  pinMode(ENCB_M3, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(ENCA_M3), readEncoder3, RISING);
-
-  // Encoder pins setup for Motor 4
-  pinMode(ENCA_M4, INPUT_PULLUP);
-  pinMode(ENCB_M4, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(ENCA_M4), readEncoder4, RISING);
-
-  Serial.println("Target positions");
+  attachInterrupt(digitalPinToInterrupt(ENCA1), readEncoder1, RISING);
+  attachInterrupt(digitalPinToInterrupt(ENCA2), readEncoder2, RISING);
+  attachInterrupt(digitalPinToInterrupt(ENCA3), readEncoder3, RISING);
+  attachInterrupt(digitalPinToInterrupt(ENCA4), readEncoder4, RISING);
+  
+  motor1.setSpeed(0);
+  motor2.setSpeed(0);
+  motor3.setSpeed(0);
+  motor4.setSpeed(0);
+  delay(10);
+  pos1 = 0;
+  pos2 = 0;
+  pos3 = 0;
+  pos4 = 0;
 }
 
 void loop() {
   nh.spinOnce();
 
-  // Motor 1 control
-  float kp1 = 10.0; // PID constants for Motor 1
-  float kd1 = 1.0;
-  float ki1 = 0.1;
-  controlMotor(motor1, PWM_M1, DIR_M1, ENCA_M1, posi1, pos1, prevT1, eprev1, eintegral1, targets[0], kp1, kd1, ki1);
+  // PID constants
+  float kp = 10.0;
+  float kd = 1.0;
+  float ki = 0.1;
+  float ki23 = 0.5;
 
-  // Motor 2 control
-  float kp2 = 8.0; // PID constants for Motor 2
-  float kd2 = 0.8;
-  float ki2 = 0.05;
-  controlMotor(motor2, PWM_M2, DIR_M2, ENCA_M2, posi2, pos2, prevT2, eprev2, eintegral2, targets[1], kp2, kd2, ki2);
-
-  // Motor 3 control
-  float kp3 = 12.0; // PID constants for Motor 3
-  float kd3 = 1.2;
-  float ki3 = 0.08;
-  controlMotor(motor3, PWM_M3, DIR_M3, ENCA_M3, posi3, pos3, prevT3, eprev3, eintegral3, targets[2], kp3, kd3, ki3);
-
-  // Motor 4 control
-  float kp4 = 9.0; // PID constants for Motor 4
-  float kd4 = 0.9;
-  float ki4 = 0.06;
-  controlMotor(motor4, PWM_M4, DIR_M4, ENCA_M4, posi4, pos4, prevT4, eprev4, eintegral4, targets[3], kp4, kd4, ki4);
-
-  delay(10); // Delay to stabilize loop
-}
-
-void controlMotor(CytronMD &motor, int pwmPin, int dirPin, int encAPin, volatile int &posi, int &pos, long &prevT, float &eprev, float &eintegral, int target, float kp, float kd, float ki) {
+  // Time difference
   long currT = micros();
-  float deltaT = ((float)(currT - prevT)) / 1.0e6;
+  float deltaT = ((float) (currT - prevT))/( 1.0e6 );
   prevT = currT;
 
   ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
-    pos = posi;
+    pos1 = posi1;
+    pos2 = posi2;
+    pos3 = posi3;
+    pos4 = posi4;
   }
+  
+  // Error calculation
+  int e1 = pos1 - target1;
+  int e2 = target2 - pos2;
+  int e3 = pos3 - target3;
+  int e4 = pos4 - target4;
 
-  int e = target - pos;
-  float dedt = (e - eprev) / deltaT;
-  eintegral += e * deltaT;
+  // Derivative
+  float dedt1 = (e1 - eprev1) / deltaT;
+  float dedt2 = (e2 - eprev2) / deltaT;
+  float dedt3 = (e3 - eprev3) / deltaT;
+  float dedt4 = (e4 - eprev4) / deltaT;
 
-  float u = kp * e + kd * dedt + ki * eintegral;
+  // Integral
+  eintegral1 += e1 * deltaT;
+  eintegral2 += e2 * deltaT;
+  eintegral3 += e3 * deltaT;
+  eintegral4 += e4 * deltaT;
 
-  if (u > 255) u = 255;
-  else if (u < -255) u = -255;
+  // Control signal
+  u1 = kp * e1 ;
+  u2 = kp * e2 ;
+  u3 = kp * e3 ;
+  u4 = kp * e4 ;
 
-  motor.setSpeed(-1 * u); // Motor runs forward (adjust as per your motor direction configuration)
+  // Clamp control signals to motor limits
+  if(u1 > 255) u1 = 255;
+  else if(u1 < -255) u1 = -255;
+  if(u2 > 255) u2 = 255;
+  else if(u2 < -255) u2 = -255;  
+  if(u3 > 255) u3 = 255;
+  else if(u3 < -255) u3 = -255;  
+  if(u4 > 255) u4 = 255;
+  else if(u4 < -255) u4 = -255;
 
-  eprev = e;
+  motor1.setSpeed(u1);
+  motor2.setSpeed(u2);
+  motor3.setSpeed(u3);
+  motor4.setSpeed(u4);
 
-  Serial.print(target);
-  Serial.print(" ");
-  Serial.print(pos);
-  Serial.print(" ");
-  Serial.println(u);
+  // Store previous error
+  eprev1 = e1;
+  eprev2 = e2;
+  eprev3 = e3;
+  eprev4 = e4;
+
+  delay(10);
 }
 
 void readEncoder1() {
-  if (digitalRead(ENCB_M1) == HIGH) {
+  if (digitalRead(ENCB1) == HIGH) {
     posi1++;
   } else {
     posi1--;
@@ -171,7 +149,7 @@ void readEncoder1() {
 }
 
 void readEncoder2() {
-  if (digitalRead(ENCB_M2) == HIGH) {
+  if (digitalRead(ENCB2) == HIGH) {
     posi2++;
   } else {
     posi2--;
@@ -179,7 +157,7 @@ void readEncoder2() {
 }
 
 void readEncoder3() {
-  if (digitalRead(ENCB_M3) == HIGH) {
+  if (digitalRead(ENCB3) == HIGH) {
     posi3++;
   } else {
     posi3--;
@@ -187,9 +165,10 @@ void readEncoder3() {
 }
 
 void readEncoder4() {
-  if (digitalRead(ENCB_M4) == HIGH) {
+  if (digitalRead(ENCB4) == HIGH) {
     posi4++;
   } else {
+    posi4--;
     posi4--;
   }
 }

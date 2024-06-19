@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Robot Controller</title>
+    <style>
+        .button {
+            padding: 20px;
+            font-size: 20px;
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Robot Controller</h1>
+    <div>
+        <button class="button" onclick="sendCommand('forward')">Forward</button>
+        <button class="button" onclick="sendCommand('backward')">Backward</button>
+        <button class="button" onclick="sendCommand('left')">Left</button>
+        <button class="button" onclick="sendCommand('right')">Right</button>
+    </div>
+    <div>
+        <button class="button" onclick="sendCommand('o')">Open Gripper</button>
+        <button class="button" onclick="sendCommand('c')">Close Gripper</button>
+        <button class="button" onclick="sendCommand('flip')">Flip Gripper</button>
+        <button class="button" onclick="sendCommand('back')">Move Gripper Back</button>
+    </div>
+    <script>
+        function sendCommand(action) {
+            fetch('/control', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'action=' + action,
+            });
+        }
+    </script>
+</body>
+</html>
+
