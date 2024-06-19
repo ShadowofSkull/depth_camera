@@ -1,6 +1,6 @@
 #include <ros.h>
 #include <std_msgs/Float32.h>
-#include <astra_camera/MotorControl.h>  // Replace 'your_package_name' with your actual ROS package name
+#include <astra_camera/MotorControl.h>  // Replace 'astra_camera' with your actual ROS package name
 
 #include <util/atomic.h> // For the ATOMIC_BLOCK macro
 #include "CytronMotorDriver.h"
@@ -31,14 +31,73 @@ CytronMD motor4(PWM_DIR, 10, 11); // Motor 4 (Right Back)
 ros::NodeHandle nh;
 
 // Define callback function to receive motor control messages
-void motorControlCallback(const astra_camera::SiloPath& msg) {
-  target1 = msg.motor1_speed;  // Set target speed for motor 1
-  target2 = msg.motor2_speed;  // Set target speed for motor 2
-  target3 = msg.motor3_speed;  // Set target speed for motor 3
-  target4 = msg.motor4_speed;  // Set target speed for motor 4
+void motorControlCallback(const astra_camera::MotorControl& msg) {
+  int16_t x = msg.x;  // Horizontal values
+  int16_t z = msg.z;  // Depth values
+
+  float speed = 255.0; // Assuming max speed of 255
+  float timeToRun = abs(z) / speed; // Time to run the motor based on distance and speed
+
+  if (z > 0) {
+    // Move forward
+    motor1.setSpeed(speed);
+    motor2.setSpeed(speed);
+    motor3.setSpeed(speed);
+    motor4.setSpeed(speed);
+  } else if (z < 0) {
+    // Move backward
+    motor1.setSpeed(-speed);
+    motor2.setSpeed(-speed);
+    motor3.setSpeed(-speed);
+    motor4.setSpeed(-speed);
+  } else if (x > 0) {
+    // Move right
+    motor1.setSpeed(-speed);
+    motor2.setSpeed(speed);
+    motor3.setSpeed(speed);
+    motor4.setSpeed(-speed);
+  } else if (x < 0) {
+    // Move left
+    motor1.setSpeed(speed);
+    motor2.setSpeed(-speed);
+    motor3.setSpeed(-speed);
+    motor4.setSpeed(speed);
+  } else if (x > 0 && z > 0) {
+    // Move diagonally top-right
+    motor1.setSpeed(0);
+    motor2.setSpeed(speed);
+    motor3.setSpeed(speed);
+    motor4.setSpeed(0);
+  } else if (x < 0 && z > 0) {
+    // Move diagonally top-left
+    motor1.setSpeed(speed);
+    motor2.setSpeed(0);
+    motor3.setSpeed(0);
+    motor4.setSpeed(speed);
+  } else if (x > 0 && z < 0) {
+    // Move diagonally bottom-right
+    motor1.setSpeed(-speed);
+    motor2.setSpeed(0);
+    motor3.setSpeed(0);
+    motor4.setSpeed(-speed);
+  } else if (x < 0 && z < 0) {
+    // Move diagonally bottom-left
+    motor1.setSpeed(0);
+    motor2.setSpeed(-speed);
+    motor3.setSpeed(-speed);
+    motor4.setSpeed(0);
+  }
+
+  delay(timeToRun * 1000); // Convert to milliseconds
+
+  // Stop the motors after moving
+  motor1.setSpeed(0);
+  motor2.setSpeed(0);
+  motor3.setSpeed(0);
+  motor4.setSpeed(0);
 }
 
-ros::Subscriber<astra_camera::SiloPath> sub("check_the_published_topic", motorControlCallback);
+ros::Subscriber<astra_camera::MotorControl> sub("MotorControl", motorControlCallback);
 
 void setup() {
   Serial.begin(115200);
@@ -59,7 +118,7 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(ENCA2), readEncoder2, RISING);
   attachInterrupt(digitalPinToInterrupt(ENCA3), readEncoder3, RISING);
   attachInterrupt(digitalPinToInterrupt(ENCA4), readEncoder4, RISING);
-  
+
   motor1.setSpeed(0);
   motor2.setSpeed(0);
   motor3.setSpeed(0);
@@ -73,71 +132,7 @@ void setup() {
 
 void loop() {
   nh.spinOnce();
-
-  // PID constants
-  float kp = 10.0;
-  float kd = 1.0;
-  float ki = 0.1;
-  float ki23 = 0.5;
-
-  // Time difference
-  long currT = micros();
-  float deltaT = ((float) (currT - prevT))/( 1.0e6 );
-  prevT = currT;
-
-  ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
-    pos1 = posi1;
-    pos2 = posi2;
-    pos3 = posi3;
-    pos4 = posi4;
-  }
-  
-  // Error calculation
-  int e1 = pos1 - target1;
-  int e2 = target2 - pos2;
-  int e3 = pos3 - target3;
-  int e4 = pos4 - target4;
-
-  // Derivative
-  float dedt1 = (e1 - eprev1) / deltaT;
-  float dedt2 = (e2 - eprev2) / deltaT;
-  float dedt3 = (e3 - eprev3) / deltaT;
-  float dedt4 = (e4 - eprev4) / deltaT;
-
-  // Integral
-  eintegral1 += e1 * deltaT;
-  eintegral2 += e2 * deltaT;
-  eintegral3 += e3 * deltaT;
-  eintegral4 += e4 * deltaT;
-
-  // Control signal
-  u1 = kp * e1 ;
-  u2 = kp * e2 ;
-  u3 = kp * e3 ;
-  u4 = kp * e4 ;
-
-  // Clamp control signals to motor limits
-  if(u1 > 255) u1 = 255;
-  else if(u1 < -255) u1 = -255;
-  if(u2 > 255) u2 = 255;
-  else if(u2 < -255) u2 = -255;  
-  if(u3 > 255) u3 = 255;
-  else if(u3 < -255) u3 = -255;  
-  if(u4 > 255) u4 = 255;
-  else if(u4 < -255) u4 = -255;
-
-  motor1.setSpeed(u1);
-  motor2.setSpeed(u2);
-  motor3.setSpeed(u3);
-  motor4.setSpeed(u4);
-
-  // Store previous error
-  eprev1 = e1;
-  eprev2 = e2;
-  eprev3 = e3;
-  eprev4 = e4;
-
-  delay(10);
+  delay(10); // Small delay to prevent overwhelming the CPU
 }
 
 void readEncoder1() {
@@ -168,7 +163,6 @@ void readEncoder4() {
   if (digitalRead(ENCB4) == HIGH) {
     posi4++;
   } else {
-    posi4--;
     posi4--;
   }
 }

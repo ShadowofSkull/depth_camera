@@ -180,7 +180,7 @@ def createSiloMatrix(silos, silosRealXZ, balls):
 
     # Assigning lower and upper x axis bound of each silo
     silosBound = [[silo[0] - silo[1] // 2, silo[0] + silo[1] // 2] for silo in silos]
-    print(silosBound)
+    # print(silosBound)
     # Setting the matrix as empty, 9999 is so when using sorting algo it goes to the back as it represent the top of silo
     siloMatrix = [[[9999, "empty"], [9999, "empty"], [9999, "empty"]] for _ in range(5)]
 
@@ -194,17 +194,17 @@ def createSiloMatrix(silos, silosRealXZ, balls):
                 break
             x, y, clsName = ball
             if x >= lower and x <= upper:
-                print(siloNum)
+                # print(siloNum)
                 siloMatrix[siloNum][layer] = [y, clsName]
                 layer += 1
         siloNum += 1
 
-    print(f"{siloMatrix}\n")
+    # print(f"{siloMatrix}\n")
     # Sort the y value in each silos in ascending order
     for silo in siloMatrix:
         silo.sort()
 
-    print(f"{siloMatrix}\n")
+    # print(f"{siloMatrix}\n")
 
     # Replacing the matrix with single int values that represent different ball color
     siloNum = 0
@@ -244,6 +244,8 @@ def findClosestBall(ballRealXZs):
 
 
 def siloPublishControl(bestSiloXZ):
+    print("publishing for silo")
+    global gripperArmState
     # Motor publish
     motorMsg = MotorControl()
     motorMsg.x = bestSiloXZ[0]
@@ -257,7 +259,8 @@ def siloPublishControl(bestSiloXZ):
     if ultrasonic == "y":
         gripperMsg.grip = "o"
         time.sleep(2)
-        gripperMsg.flip = "forward"
+        gripperArmState = "forward"
+        gripperMsg.flip = gripperArmState
 
     print(gripperMsg)
     pubGripperControl.publish(gripperMsg)
@@ -267,6 +270,8 @@ def siloPublishControl(bestSiloXZ):
 
 
 def ballPublishControl(closestTeamBallXZ, closestPurpleBallXZ):
+    print("publishing for balls")
+    global gripperArmState
     # Motor publish
     motorMsg = MotorControl()
     if not closestTeamBallXZ:
@@ -288,7 +293,8 @@ def ballPublishControl(closestTeamBallXZ, closestPurpleBallXZ):
     if ir == "y":
         gripperMsg.grip = "c"
         time.sleep(2)
-        gripperMsg.flip = "backward"
+        gripperArmState = "backward"
+        gripperMsg.flip = gripperArmState
         closestBall = min(teamBallZ, purpleBallZ)
         # if team ball is closer, keep gripping team ball, or else release purple ball
         if closestBall == teamBallZ:
@@ -296,9 +302,10 @@ def ballPublishControl(closestTeamBallXZ, closestPurpleBallXZ):
         elif closestBall == purpleBallZ:
             gripperMsg.grip = "o"
             time.sleep(2)
-            gripperMsg.flip = "forward"
+            gripperArmState = "forward"
+            gripperMsg.flip = gripperArmState
 
-    print(gripperMsg)
+    # print(gripperMsg)
     pubGripperControl.publish(gripperMsg)
 
     # To control change of decision
