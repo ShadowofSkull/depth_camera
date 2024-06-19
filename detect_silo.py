@@ -240,8 +240,8 @@ def findClosestBall(ballRealXZs):
 def siloPublishControl(bestSiloXZ):
     # Motor publish
     motorMsg = MotorControl()
-    motorMsg.horizontal = bestSiloXZ[0]
-    motorMsg.forward = bestSiloXZ[1]
+    motorMsg.x = bestSiloXZ[0]
+    motorMsg.z = bestSiloXZ[1]
     print(motorMsg)
     pubMotorControl.publish(motorMsg)
 
@@ -264,8 +264,8 @@ def ballPublishControl(closestTeamBallXZ, closestPurpleBallXZ):
     # Motor publish
     motorMsg = MotorControl()
     teamBallX, teamBallZ = closestTeamBallXZ
-    motorMsg.horizontal = teamBallX
-    motorMsg.forward = teamBallZ
+    motorMsg.x = teamBallX
+    motorMsg.z = teamBallZ
     print(motorMsg)
     pubMotorControl.publish(motorMsg)
 
