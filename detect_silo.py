@@ -263,7 +263,10 @@ def siloPublishControl(bestSiloXZ):
 def ballPublishControl(closestTeamBallXZ, closestPurpleBallXZ):
     # Motor publish
     motorMsg = MotorControl()
-    teamBallX, teamBallZ = closestTeamBallXZ
+    if not closestTeamBallXZ:
+        teamBallX, teamBallZ = [0, 0]
+    else:
+        teamBallX, teamBallZ = closestTeamBallXZ
     motorMsg.x = teamBallX
     motorMsg.z = teamBallZ
     print(motorMsg)
@@ -271,7 +274,10 @@ def ballPublishControl(closestTeamBallXZ, closestPurpleBallXZ):
 
     # Gripper publish
     gripperMsg = GripperControl()
-    purpleBallX, purpleBallZ = closestPurpleBallXZ
+    if not closestPurpleBallXZ:
+        purpleBallZ = 99999
+    else:
+        purpleBallX, purpleBallZ = closestPurpleBallXZ
     # Close when ball enter gripper range and flip backward
     if ir == "y":
         gripperMsg.grip = "c"
