@@ -169,5 +169,6 @@ void readEncoder4() {
     posi4++;
   } else {
     posi4--;
+    posi4--;
   }
 }
