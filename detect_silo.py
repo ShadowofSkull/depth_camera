@@ -31,10 +31,10 @@ def callback(colorFrame, depthFrame):
     bridge = CvBridge()
     try:
         if gripperArmState == "backward":
-            colorFrame = cv2.flip(colorFrame, -1)
-            depthFrame = cv2.flip(depthFrame, -1)
             colorFrame = bridge.imgmsg_to_cv2(colorFrame, "bgr8")
             depthFrame = bridge.imgmsg_to_cv2(depthFrame, "passthrough")
+            colorFrame = cv2.flip(colorFrame, -1)
+            depthFrame = cv2.flip(depthFrame, -1)
         elif gripperArmState == "forward":
             colorFrame = bridge.imgmsg_to_cv2(colorFrame, "bgr8")
             depthFrame = bridge.imgmsg_to_cv2(depthFrame, "passthrough")
