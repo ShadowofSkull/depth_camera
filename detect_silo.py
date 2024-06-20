@@ -102,14 +102,15 @@ def callback(colorFrame, depthFrame):
             teamBallRealXZs.append([real_x, depth])
             # print(f"realx:{real_x}, depth:{depth}")
 
-    if not teamBallRealXZs:
-        print("No team ball found, robot stop")
-        return
-    closestTeamBallXZ = findClosestBall(teamBallRealXZs)
-    closestPurpleBallXZ = findClosestBall(purpleBallRealXZs)
 
     # Publish to gripper and motor depending on whether we are facing balls or silos
     if not silos:
+        # if it is facing the balls without silo but no team ball detected stop
+        if not teamBallRealXZs:
+            print("No team ball found, robot stop")
+            return
+        closestTeamBallXZ = findClosestBall(teamBallRealXZs)
+        closestPurpleBallXZ = findClosestBall(purpleBallRealXZs)
         ballPublishControl(closestTeamBallXZ, closestPurpleBallXZ)
     else:
         # 1 is red, 2 is blue

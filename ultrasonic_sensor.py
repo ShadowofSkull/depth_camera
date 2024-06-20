@@ -61,7 +61,7 @@ if __name__ == "__main__":
             rospy.loginfo("Measured Distance Sensor 2 = %.1f cm" % dist2)
 
             # Determine if sensor 1 is in front of silo
-            if dist1 < 50: # 50 cm. Adjust this value after calibrate
+            if dist1 < 50 and dist2 < 50: # 50 cm. Adjust this value after calibrate
                 status = "y"  # Yes, sensor 1 is in front of silo
             else:
                 status = "n"  # No, sensor 1 is not in front of silo
