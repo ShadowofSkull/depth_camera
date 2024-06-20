@@ -13,7 +13,9 @@ def gripper_command_publisher():
         command = input("Enter gripper command (o/c): ")
 
         gripper_control_msg = GripperControl()
-        gripper_control_msg.command = command
+        gripper_control_msg.grip = command
+        gripper_control_msg.flip = "forward"
+
         gripper_control_pub.publish(gripper_control_msg)
 
         rate.sleep()

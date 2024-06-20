@@ -19,7 +19,7 @@ frame_counter = 0
 
 
 def callback(colorFrame, depthFrame):
-    global frame_counter, start, model, pubCoords
+    global frame_counter, start, model, gripperArmState
     frame_counter += 1
 
     # Process every 5th frame
@@ -102,15 +102,14 @@ def callback(colorFrame, depthFrame):
             teamBallRealXZs.append([real_x, depth])
             # print(f"realx:{real_x}, depth:{depth}")
 
-
+    if not teamBallRealXZs:
+        print("No team ball found, robot stop")
+        return
+    closestTeamBallXZ = findClosestBall(teamBallRealXZs)
+    closestPurpleBallXZ = findClosestBall(purpleBallRealXZs)
+   
     # Publish to gripper and motor depending on whether we are facing balls or silos
     if not silos:
-        # if it is facing the balls without silo but no team ball detected stop
-        if not teamBallRealXZs:
-            print("No team ball found, robot stop")
-            return
-        closestTeamBallXZ = findClosestBall(teamBallRealXZs)
-        closestPurpleBallXZ = findClosestBall(purpleBallRealXZs)
         ballPublishControl(closestTeamBallXZ, closestPurpleBallXZ)
     else:
         # 1 is red, 2 is blue
@@ -227,7 +226,8 @@ def createSiloMatrix(silos, silosRealXZ, balls):
 
 
 def findClosestBall(ballRealXZs):
-
+    if len(ballRealXZs) == 1:
+        return ballRealXZs[0]
     closestBallXZ = []
     for i in range(len(ballRealXZs)):
         if closestBallXZ == []:
@@ -249,8 +249,11 @@ def siloPublishControl(bestSiloXZ):
     global gripperArmState
     # Motor publish
     motorMsg = MotorControl()
-    motorMsg.x = bestSiloXZ[0]
-    motorMsg.z = bestSiloXZ[1]
+    # motorMsg.x = bestSiloXZ[0]
+    # motorMsg.z = bestSiloXZ[1]
+    motorMsg.x = 10
+    motorMsg.z = 20
+
     print(motorMsg)
     pubMotorControl.publish(motorMsg)
 
@@ -279,32 +282,45 @@ def ballPublishControl(closestTeamBallXZ, closestPurpleBallXZ):
         teamBallX, teamBallZ = [0, 0]
     else:
         teamBallX, teamBallZ = closestTeamBallXZ
-    motorMsg.x = teamBallX
-    motorMsg.z = teamBallZ
+    # motorMsg.x = teamBallX
+    # motorMsg.z = teamBallZ
+    motorMsg.x = 0
+    motorMsg.z = 200
     print(motorMsg)
     pubMotorControl.publish(motorMsg)
 
-    # Gripper publish
     gripperMsg = GripperControl()
-    if not closestPurpleBallXZ:
-        purpleBallZ = 99999
-    else:
-        purpleBallX, purpleBallZ = closestPurpleBallXZ
-    # Close when ball enter gripper range and flip backward
-    if ir == "y":
-        gripperMsg.grip = "c"
-        time.sleep(2)
+    if gripperArmState == "forward":
+        gripperMsg.grip = "o"
         gripperArmState = "backward"
         gripperMsg.flip = gripperArmState
-        closestBall = min(teamBallZ, purpleBallZ)
-        # if team ball is closer, keep gripping team ball, or else release purple ball
-        if closestBall == teamBallZ:
-            gripperMsg.grip = "c"
-        elif closestBall == purpleBallZ:
-            gripperMsg.grip = "o"
-            time.sleep(2)
-            gripperArmState = "forward"
-            gripperMsg.flip = gripperArmState
+    else:
+        gripperMsg.grip = "o"
+        gripperArmState = "forward"
+        gripperMsg.flip = gripperArmState
+    print(gripperMsg)
+    pubGripperControl.publish(gripperMsg)
+    # Gripper publish
+    # gripperMsg = GripperControl()
+    # if not closestPurpleBallXZ:
+    #     purpleBallZ = 99999
+    # else:
+    #     purpleBallX, purpleBallZ = closestPurpleBallXZ
+    # # Close when ball enter gripper range and flip backward
+    # if ir == "y":
+    #     gripperMsg.grip = "c"
+    #     time.sleep(2)
+    #     gripperArmState = "backward"
+    #     gripperMsg.flip = gripperArmState
+    #     closestBall = min(teamBallZ, purpleBallZ)
+    #     # if team ball is closer, keep gripping team ball, or else release purple ball
+    #     if closestBall == teamBallZ:
+    #         gripperMsg.grip = "c"
+    #     elif closestBall == purpleBallZ:
+    #         gripperMsg.grip = "o"
+    #         time.sleep(2)
+    #         gripperArmState = "forward"
+    #         gripperMsg.flip = gripperArmState
 
     # print(gripperMsg)
     pubGripperControl.publish(gripperMsg)
