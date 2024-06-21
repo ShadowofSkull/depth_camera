@@ -112,6 +112,13 @@ def callback(colorFrame, depthFrame):
             closestTeamBallXZ = findClosestBall(teamBallRealXZs)
             # print(f"TEAMclosest ball: {closestTeamBallXZ}")
             closestPurpleBallXZ = findClosestBall(purpleBallRealXZs)
+            closestBalls = []
+            closestBalls.append(closestTeamBallXZ)
+            closestBalls.append(closestPurpleBallXZ)
+            if closestBalls[0][1] < closestBalls[1][1]:
+                closestBall = "team"
+            else:
+                closestBall = "purple"
             # print(f"purple closest ball {closestPurpleBallXZ}")
             if closestTeamBallXZ is None:
                 print("No closest team ball found, robot stop")
@@ -328,10 +335,10 @@ def ballPublishControl(closestTeamBallXZ, closestPurpleBallXZ):
     # publish arm state no matter what
     gripperMsg.flip = gripperArmState
     # if team ball was closer, keep gripping team ball, or else release purple ball
-    if closestBall == purpleBallZ and closestBall != teamBallZ:
+    if (closestBall == purpleBallZ and closestBall != teamBallZ) and (teamBallX >= purpleBallX - 10 and teamBallX <= purpleBallX + 10):
         gripperClawState = "o"
         gripperMsg.grip = gripperClawState
-        gripperArmState = "forward"
+        gripperArmState = closestBall
         gripperMsg.flip = gripperArmState
     print(gripperMsg)
     pubGripperControl.publish(gripperMsg)
