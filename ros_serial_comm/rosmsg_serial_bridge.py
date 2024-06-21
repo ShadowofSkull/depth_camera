@@ -3,26 +3,32 @@ import time
 import rospy
 from astra_camera.msg import MotorControl, GripperControl
 
+# this code is to acquired rosmsg in python and publish it by serial to arduino
+# keep trying to connect to serial port
 ser1 = None
 while ser1 == None:
     try:
+        # make sure to change the port to the correct port
         ser1 = serial.Serial('/dev/ttyACM0', 115200, timeout = 1.0)
     except:
         print("error")
+        # retry every 1 sec
         time.sleep(1)
 ser1.reset_input_buffer()
 print("Serial OK")
-x = ""
-z = ""
-distance = ""
+x = 0
+z = 0
 armState = ""
+direction_x = ""
+direction_z = ""
+distance = ""
+
 def motor_cb(msg):
     print("callback")
-    global x, z, distance, armState
-    x = str(msg.x)
-    z = str(msg.z)
-    distance = armState + z
-    print(f"distance:{distance}")
+    global x, z
+    x = msg.x
+    z = msg.z
+    
 
 def grip_cb(msg):
     print("grip")
@@ -45,26 +51,24 @@ try:
                 print("writing")
                 print(x, z)
                 print(armState)
+                if x < 0:
+                    direction_x = "L"
+                else:
+                    direction_x = "R"
+                distance =  direction_x + str(x)
+                # write for x direction movement first
                 ser1.write(distance.encode('utf=8'))
+                # delay for x movement to finish
+                time.sleep(5)
+                if armState != "":
+                    # carry out z movement
+                    distance = armState + str(z)
+                    ser1.write(distance.encode('utf=8'))
             except Exception as e:
                 print("Fail", e)
         # rate.sleep()
         time.sleep(5)
-#             ser2.flush()
-#         if distance:
-#             while ser2.in_waiting <= 0:
-#                 time.sleep(0.01)
-#                 response = ser2.readline().decode('utf-8').rstrip()
-#                 print(response)
-#             line = ser1.readline ().decode("utf=8").rstrip()
-#             print(line)        
-#         print("Send message to Arduino 2")
-#         ser2.write(line.encode('utf-8'))
-#         while ser2.in_waiting <= 0:
-#             time.sleep(0.01)
-#         response = ser2.readline().decode('utf-8').rstrip()
-#         print(response)
-        
+
 except KeyboardInterrupt:
     print("Close Serial Communication")
     ser1.close()
