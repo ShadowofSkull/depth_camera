@@ -325,13 +325,14 @@ def ballPublishControl(closestTeamBallXZ, closestPurpleBallXZ):
     # Close when ball enter gripper range and flip backward no matter what color ( should be handle at ir)
 
     closestBall = min(teamBallZ, purpleBallZ)
+    # publish arm state no matter what
+    gripperMsg.flip = gripperArmState
     # if team ball was closer, keep gripping team ball, or else release purple ball
     if closestBall == purpleBallZ and closestBall != teamBallZ:
         gripperClawState = "o"
         gripperMsg.grip = gripperClawState
         gripperArmState = "forward"
         gripperMsg.flip = gripperArmState
-
     print(gripperMsg)
     pubGripperControl.publish(gripperMsg)
 
@@ -384,7 +385,7 @@ if __name__ == "__main__":
     try:
         rospy.init_node("detect")
         start = time.time()
-        model = YOLO("./models/best.pt")
+        model = YOLO("./best.pt")
         gripperClawState = "o"
         gripperArmState = "forward"
         # y if ball in gripper vice versa

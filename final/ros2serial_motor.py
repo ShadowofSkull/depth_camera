@@ -25,21 +25,22 @@ distance = ""
 
 
 def motor_cb(msg):
-    print("callback")
+    # print("callback")
     global x, z
     x = msg.x
     z = msg.z
     # formula to change distance mm value to encoder val
     # encoder = distance // 10 (fake formula)
-    x = x // 10
-    z = z // 10
+    x = x - 50
+    z = z - 50
 
 
 def grip_cb(msg):
-    print("grip")
+    # print("grip")
     global armState
     armState = msg.flip
-    armState = armState[0]
+    if armState != "":
+        armState = armState[0]
     armState = armState.capitalize()
 
 
@@ -48,32 +49,36 @@ rospy.Subscriber("motor_control", MotorControl, callback=motor_cb)
 rospy.Subscriber("gripper_control", GripperControl, callback=grip_cb)
 
 try:
-    # rate = rospy.Rate(0.1)
+    # rate = rospy.Rate(1)
 
-    while not rospy.is_shutdown():
-        if x != 0 and z != 0:
+    while True:
+        print(f"x{x},z {z}")
 
-            try:
-                print("writing")
-                print(x, z)
-                print(armState)
-                if x < 0:
-                    direction_x = "L"
-                else:
-                    direction_x = "R"
-                distance = direction_x + str(x)
-                # write for x direction movement first
+        try:
+            print("writing")
+            print(x, z)
+            print(armState)
+            if x < 0:
+                direction_x = "L"
+                x = x * -1 
+            else:
+                direction_x = "R"
+            distance = direction_x + str(x) + '\n'
+            print(distance)
+            # write for x direction movement first
+            ser1.write(distance.encode("utf=8"))
+            # delay for x movement to finish
+            time.sleep(5)
+            if armState != "":
+                # carry out z movement
+                distance = armState + str(z) + '\n'
+                print(distance)
                 ser1.write(distance.encode("utf=8"))
-                # delay for x movement to finish
-                time.sleep(5)
-                if armState != "":
-                    # carry out z movement
-                    distance = armState + str(z)
-                    ser1.write(distance.encode("utf=8"))
-            except Exception as e:
-                print("Fail", e)
+            time.sleep(10)
+        except Exception as e:
+            print("Fail", e)
         # rate.sleep()
-        time.sleep(5)
+        time.sleep(1)
 
 except KeyboardInterrupt:
     print("Close Serial Communication")
