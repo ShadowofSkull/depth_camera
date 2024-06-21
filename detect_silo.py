@@ -19,107 +19,116 @@ frame_counter = 0
 
 
 def callback(colorFrame, depthFrame):
-    global frame_counter, start, model, gripperArmState
-    frame_counter += 1
-
-    # Process every 5th frame
-    if frame_counter % 60 != 0:
-        # if frame_counter % 5 != 0:
-        return
-
-    # Convert ROS msg to cv nparray that's suitable for model
-    bridge = CvBridge()
     try:
-        if gripperArmState == "backward":
-            colorFrame = bridge.imgmsg_to_cv2(colorFrame, "bgr8")
-            depthFrame = bridge.imgmsg_to_cv2(depthFrame, "passthrough")
-            colorFrame = cv2.flip(colorFrame, -1)
-            depthFrame = cv2.flip(depthFrame, -1)
-        elif gripperArmState == "forward":
-            colorFrame = bridge.imgmsg_to_cv2(colorFrame, "bgr8")
-            depthFrame = bridge.imgmsg_to_cv2(depthFrame, "passthrough")
-    except CvBridgeError as e:
-        print(e)
-        return
+        global frame_counter, start, model, gripperArmState
+        frame_counter += 1
 
-    # Run YOLOv8 inference on the colorFrame
-    results = model(colorFrame)
+        # Process every 5th frame
+        if frame_counter % 60 != 0:
+            # if frame_counter % 5 != 0:
+            return
 
-    # Check interval between callback
-    end = time.time()
-    # print(f"Time between frames: {end - start:.2f} seconds")
-    start = end
+        # Convert ROS msg to cv nparray that's suitable for model
+        bridge = CvBridge()
+        try:
+            if gripperArmState == "backward":
+                colorFrame = bridge.imgmsg_to_cv2(colorFrame, "bgr8")
+                depthFrame = bridge.imgmsg_to_cv2(depthFrame, "passthrough")
+                colorFrame = cv2.flip(colorFrame, -1)
+                depthFrame = cv2.flip(depthFrame, -1)
+            elif gripperArmState == "forward":
+                colorFrame = bridge.imgmsg_to_cv2(colorFrame, "bgr8")
+                depthFrame = bridge.imgmsg_to_cv2(depthFrame, "passthrough")
+        except CvBridgeError as e:
+            print(e)
+            return
 
-    # Initialise list to store coordinates of boxes centre point
-    teamBallRealXZs = []
-    purpleBallRealXZs = []
-    silos = []
-    silosRealXZ = []
-    balls = []
-    for result in results:
-        # Obtain classes name model can detect
-        names = result.names
-        # print(f"name: {names}")
-        boxes = result.boxes
-        for box in boxes:
-            xywh = box.xywh
-            # Convert tensor to numpy ndarray
-            xywh = xywh.to("cpu").detach().numpy().copy()
-            conf = int(box.conf[0] * 100)
-            cls = int(box.cls[0])
-            clsName = names[cls]
+        # Run YOLOv8 inference on the colorFrame
+        results = model(colorFrame)
+
+        # Check interval between callback
+        end = time.time()
+        # print(f"Time between frames: {end - start:.2f} seconds")
+        start = end
+
+        # Initialise list to store coordinates of boxes centre point
+        teamBallRealXZs = []
+        purpleBallRealXZs = []
+        silos = []
+        silosRealXZ = []
+        balls = []
+        for result in results:
+            # Obtain classes name model can detect
+            names = result.names
+            # print(f"name: {names}")
+            boxes = result.boxes
+            for box in boxes:
+                xywh = box.xywh
+                # Convert tensor to numpy ndarray
+                xywh = xywh.to("cpu").detach().numpy().copy()
+                conf = int(box.conf[0] * 100)
+                cls = int(box.cls[0])
+                clsName = names[cls]
 
             if conf <= 60:
                 continue
             # Skip if clsName is not balls
 
-            # Obtain xy which is centre coords of
-            x, y, w, h = xywh[0]
-            x = int(x)
-            y = int(y)
+                # Obtain xy which is centre coords of
+                x, y, w, h = xywh[0]
+                x = int(x)
+                y = int(y)
 
-            if clsName in ["Silo"]:
-                # lower upper x bound of 5 silos
-                print(f"x: {x}, w:{w}")
-                silos.append([x, w, y])
+                if clsName in ["Silo"]:
+                    # lower upper x bound of 5 silos
+                    print(f"x: {x}, w:{w}")
+                    silos.append([x, w, y])
+                    depth = getDepth(x, y, conf, clsName, depthFrame)
+                    real_x = calcX(depth, x, colorFrame)
+                    silosRealXZ.append([real_x, depth])
+                    continue
+
+                # For processing balls in silos later
+                balls.append([x, y, clsName])
+
+                # To get real x and depth for balls on the floor
                 depth = getDepth(x, y, conf, clsName, depthFrame)
                 real_x = calcX(depth, x, colorFrame)
-                silosRealXZ.append([real_x, depth])
-                continue
+                # Separate ball by purple and team color
+                if clsName == "purple_ball":
+                    purpleBallRealXZs.append([real_x, depth])
+                    # print(f"purple realx:{real_x}, depth:{depth}")
+                    continue
 
-            # For processing balls in silos later
-            balls.append([x, y, clsName])
+                teamBallRealXZs.append([real_x, depth])
+                # print(f"realx:{real_x}, depth:{depth}")
 
-            # To get real x and depth for balls on the floor
-            depth = getDepth(x, y, conf, clsName, depthFrame)
-            real_x = calcX(depth, x, colorFrame)
-            # Separate ball by purple and team color
-            if clsName == "purple_ball":
-                purpleBallRealXZs.append([real_x, depth])
-                # print(f"purple realx:{real_x}, depth:{depth}")
-                continue
-
-            teamBallRealXZs.append([real_x, depth])
-            # print(f"realx:{real_x}, depth:{depth}")
-
-    if not teamBallRealXZs:
-        print("No team ball found, robot stop")
-        return
-    closestTeamBallXZ = findClosestBall(teamBallRealXZs)
-    closestPurpleBallXZ = findClosestBall(purpleBallRealXZs)
-   
-    # Publish to gripper and motor depending on whether we are facing balls or silos
-    if not silos:
-        ballPublishControl(closestTeamBallXZ, closestPurpleBallXZ)
-    else:
-        # 1 is red, 2 is blue
-        team_color = 1
-        siloMatrix = createSiloMatrix(silos, silosRealXZ, balls)
-        # Determine best silo to place the ball based on priorities
-        bestSiloIdx = findBestSilo(siloMatrix, team_color)
-        # Using idx find real x z
-        bestSiloXZ = silosRealXZ[bestSiloIdx]
-        siloPublishControl(bestSiloXZ)
+        # Publish to gripper and motor depending on whether we are facing balls or silos
+        if not silos:
+            if not teamBallRealXZs:
+                print("No team ball found, robot stop")
+                return
+            print(f"team ball realxz: {teamBallRealXZs}")
+            closestTeamBallXZ = findClosestBall(teamBallRealXZs)
+            closestPurpleBallXZ = findClosestBall(purpleBallRealXZs)
+            if closestTeamBallXZ is None:
+                print("No closest team ball found, robot stop")
+                return
+            ballPublishControl(closestTeamBallXZ, closestPurpleBallXZ)
+        else:
+            # 1 is red, 2 is blue
+            team_color = 1
+            siloMatrix = createSiloMatrix(silos, silosRealXZ, balls)
+            # Determine best silo to place the ball based on priorities
+            bestSiloIdx = findBestSilo(siloMatrix, team_color)
+            if bestSiloIdx is None:
+                print("No suitable silo available, robot stop")
+                return
+            # Using idx find real x z
+            bestSiloXZ = silosRealXZ[bestSiloIdx]
+            siloPublishControl(bestSiloXZ)
+    except Exception as e:
+        print(f"callback error: {e}")
 
 
 # END OF CALLBACK
@@ -148,7 +157,7 @@ def findBestSilo(siloMatrix, team_color=1):
         opposite_team_color = 2
     elif team_color == 2:
         opposite_team_color = 1
-    for i, silo in enumerate(siloMatrix):
+    for i, silo in enumerate(siloMatrix, start=0):
         if silo[1] == opposite_team_color:  # Priority 1
             priority_1.append(i)
         elif silo[1] == team_color:  # Priority 2
@@ -163,9 +172,11 @@ def findBestSilo(siloMatrix, team_color=1):
         best_silo = priority_2[0]  # Choose first silo with teamBall in second row
     elif priority_3:
         best_silo = priority_3[0]  # Choose first empty silo
-
+    else:
+        best_silo = None  # No suitable silo available
     # Check for V Goal condition
     check_v_goal(siloMatrix)
+    print(f"best_silo idx: {best_silo}")
     return best_silo
 
 
@@ -226,21 +237,25 @@ def createSiloMatrix(silos, silosRealXZ, balls):
 
 
 def findClosestBall(ballRealXZs):
+    # if only one ball it will be the closest
     if len(ballRealXZs) == 1:
         return ballRealXZs[0]
     closestBallXZ = []
     for i in range(len(ballRealXZs)):
+        # if closest is empty set it to first ball
         if closestBallXZ == []:
             closestBallXZ.append(ballRealXZs[i][0])
             closestBallXZ.append(ballRealXZs[i][1])
+        # if ball z is smaller than closest set it to newest closest
         elif ballRealXZs[i][1] < closestBallXZ[1]:
             closestBallXZ[0] = ballRealXZs[i][0]
             closestBallXZ[1] = ballRealXZs[i][1]
 
     if not closestBallXZ:
+        print(closestBallXZ)
         print("list empty")
-        return []
-
+        return None
+    print(closestBallXZ)
     return closestBallXZ
 
 
@@ -261,8 +276,8 @@ def siloPublishControl(bestSiloXZ):
     gripperMsg = GripperControl()
     # ultrasonic in mm
     if ultrasonic == "y":
-        gripperMsg.grip = "o"
-        time.sleep(2)
+        gripperClawState = "o"
+        gripperMsg.grip = gripperClawState
         gripperArmState = "forward"
         gripperMsg.flip = gripperArmState
 
@@ -275,13 +290,10 @@ def siloPublishControl(bestSiloXZ):
 
 def ballPublishControl(closestTeamBallXZ, closestPurpleBallXZ):
     print("publishing for balls")
-    global gripperArmState
+    global gripperClawState, gripperArmState
     # Motor publish
     motorMsg = MotorControl()
-    if not closestTeamBallXZ:
-        teamBallX, teamBallZ = [0, 0]
-    else:
-        teamBallX, teamBallZ = closestTeamBallXZ
+    teamBallX, teamBallZ = closestTeamBallXZ
     # motorMsg.x = teamBallX
     # motorMsg.z = teamBallZ
     motorMsg.x = 200
@@ -300,32 +312,30 @@ def ballPublishControl(closestTeamBallXZ, closestPurpleBallXZ):
         gripperMsg.flip = gripperArmState
     print(gripperMsg)
     pubGripperControl.publish(gripperMsg)
-    # Gripper publish
+    # Gripper publish ( might just not handle closing and flipping backward here since ir can't be published)
     # gripperMsg = GripperControl()
     # if not closestPurpleBallXZ:
     #     purpleBallZ = 99999
     # else:
     #     purpleBallX, purpleBallZ = closestPurpleBallXZ
-    # # Close when ball enter gripper range and flip backward
+    # # Close when ball enter gripper range and flip backward no matter what color
     # if ir == "y":
-    #     gripperMsg.grip = "c"
-    #     time.sleep(2)
+    #     gripperClawState = "c"
+    #     gripperMsg.grip = gripperClawState
     #     gripperArmState = "backward"
     #     gripperMsg.flip = gripperArmState
     #     closestBall = min(teamBallZ, purpleBallZ)
     #     # if team ball is closer, keep gripping team ball, or else release purple ball
-    #     if closestBall == teamBallZ:
-    #         gripperMsg.grip = "c"
-    #     elif closestBall == purpleBallZ:
-    #         gripperMsg.grip = "o"
-    #         time.sleep(2)
+    #     if closestBall == purpleBallZ:
+    #         gripperClawState = "o"
+    #         gripperMsg.grip = gripperClawState
     #         gripperArmState = "forward"
     #         gripperMsg.flip = gripperArmState
 
     # print(gripperMsg)
     pubGripperControl.publish(gripperMsg)
 
-    # To control change of decision
+    # To limit the change of decision
     time.sleep(5)
 
 
@@ -371,29 +381,33 @@ def ultrasonicCallback(msg):
 
 
 if __name__ == "__main__":
-    rospy.init_node("detect")
-    start = time.time()
-    model = YOLO("./models/best.pt")
+    try:
+        rospy.init_node("detect")
+        start = time.time()
+        model = YOLO("./models/best.pt")
+        gripperClawState = "o"
+        gripperArmState = "forward"
+        # y if ball in gripper vice versa
+        ir = "n"
+        # y if in front of silo vice versa
+        ultrasonic = "n"
+        print("done init")
+        pubSiloMatrix = rospy.Publisher("silo_matrix", SiloMatrix, queue_size=10)
+        pubGripperControl = rospy.Publisher(
+            "gripper_control", GripperControl, queue_size=10
+        )
+        pubMotorControl = rospy.Publisher("motor_control", MotorControl, queue_size=10)
+        colorSub = message_filters.Subscriber("/camera/color/image_raw", Image)
+        depthSub = message_filters.Subscriber("/camera/depth/image_raw", Image)
+        # irSub = rospy.Subscriber("BallInGripper", String, irCallback)
+        ultrasonicSub = rospy.Subscriber("InFrontOfSilo", String, ultrasonicCallback)
+        ts = message_filters.ApproximateTimeSynchronizer(
+            [colorSub, depthSub], 10, 0.1, allow_headerless=True
+        )
+        # ts = message_filters.TimeSynchronizer([colorSub, depthSub], 10)
 
-    # y for detected, n for no detection
-    gripperArmState = "forward"
-    ir = "n"
-    ultrasonic = "n"
-    print("done init")
-    pubSiloMatrix = rospy.Publisher("silo_matrix", SiloMatrix, queue_size=10)
-    pubGripperControl = rospy.Publisher(
-        "gripper_control", GripperControl, queue_size=10
-    )
-    pubMotorControl = rospy.Publisher("motor_control", MotorControl, queue_size=10)
-    colorSub = message_filters.Subscriber("/camera/color/image_raw", Image)
-    depthSub = message_filters.Subscriber("/camera/depth/image_raw", Image)
-    # irSub = rospy.Subscriber("BallInGripper", String, irCallback)
-    # ultrasonicSub = rospy.Subscriber("InFrontOfSilo", String, ultrasonicCallback)
-    ts = message_filters.ApproximateTimeSynchronizer(
-        [colorSub, depthSub], 10, 0.1, allow_headerless=True
-    )
-    # ts = message_filters.TimeSynchronizer([colorSub, depthSub], 10)
-
-    ts.registerCallback(callback)
-    print("done sub/pub, callback")
-    rospy.spin()
+        ts.registerCallback(callback)
+        print("done sub/pub, callback")
+        rospy.spin()
+    except Exception as e:
+        print(f"main code error: {e}")
