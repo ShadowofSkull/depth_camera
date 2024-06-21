@@ -9,7 +9,7 @@ ser1 = None
 while ser1 == None:
     try:
         # make sure to change the port to the correct port
-        ser1 = serial.Serial('/dev/ttyACM0', 115200, timeout = 1.0)
+        ser1 = serial.Serial("/dev/ttyACM0", 115200, timeout=1.0)
     except:
         print("error")
         # retry every 1 sec
@@ -23,12 +23,17 @@ direction_x = ""
 direction_z = ""
 distance = ""
 
+
 def motor_cb(msg):
     print("callback")
     global x, z
     x = msg.x
     z = msg.z
-    
+    # formula to change distance mm value to encoder val
+    # encoder = distance // 10 (fake formula)
+    x = x // 10
+    z = z // 10
+
 
 def grip_cb(msg):
     print("grip")
@@ -37,16 +42,17 @@ def grip_cb(msg):
     armState = armState[0]
     armState = armState.capitalize()
 
+
 rospy.init_node("pub_xz_to_serial")
 rospy.Subscriber("motor_control", MotorControl, callback=motor_cb)
 rospy.Subscriber("gripper_control", GripperControl, callback=grip_cb)
 
 try:
     # rate = rospy.Rate(0.1)
-    
+
     while not rospy.is_shutdown():
         if x != 0 and z != 0:
-            
+
             try:
                 print("writing")
                 print(x, z)
@@ -55,15 +61,15 @@ try:
                     direction_x = "L"
                 else:
                     direction_x = "R"
-                distance =  direction_x + str(x)
+                distance = direction_x + str(x)
                 # write for x direction movement first
-                ser1.write(distance.encode('utf=8'))
+                ser1.write(distance.encode("utf=8"))
                 # delay for x movement to finish
                 time.sleep(5)
                 if armState != "":
                     # carry out z movement
                     distance = armState + str(z)
-                    ser1.write(distance.encode('utf=8'))
+                    ser1.write(distance.encode("utf=8"))
             except Exception as e:
                 print("Fail", e)
         # rate.sleep()
