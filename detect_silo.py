@@ -70,9 +70,9 @@ def callback(colorFrame, depthFrame):
                 cls = int(box.cls[0])
                 clsName = names[cls]
 
-            if conf <= 60:
-                continue
-            # Skip if clsName is not balls
+                # Skip if too low conf
+                if conf <= 60:
+                    continue
 
                 # Obtain xy which is centre coords of
                 x, y, w, h = xywh[0]
@@ -108,9 +108,11 @@ def callback(colorFrame, depthFrame):
             if not teamBallRealXZs:
                 print("No team ball found, robot stop")
                 return
-            print(f"team ball realxz: {teamBallRealXZs}")
+            # print(f"team ball realxz: {teamBallRealXZs}")
             closestTeamBallXZ = findClosestBall(teamBallRealXZs)
+            # print(f"TEAMclosest ball: {closestTeamBallXZ}")
             closestPurpleBallXZ = findClosestBall(purpleBallRealXZs)
+            # print(f"purple closest ball {closestPurpleBallXZ}")
             if closestTeamBallXZ is None:
                 print("No closest team ball found, robot stop")
                 return
@@ -255,7 +257,7 @@ def findClosestBall(ballRealXZs):
         print(closestBallXZ)
         print("list empty")
         return None
-    print(closestBallXZ)
+    print(f"if function find closest: {closestBallXZ}")
     return closestBallXZ
 
 
@@ -264,10 +266,10 @@ def siloPublishControl(bestSiloXZ):
     global gripperArmState
     # Motor publish
     motorMsg = MotorControl()
-    # motorMsg.x = bestSiloXZ[0]
-    # motorMsg.z = bestSiloXZ[1]
-    motorMsg.x = 10
-    motorMsg.z = 20
+    motorMsg.x = bestSiloXZ[0]
+    motorMsg.z = bestSiloXZ[1]
+    # motorMsg.x = 10
+    # motorMsg.z = 20
 
     print(motorMsg)
     pubMotorControl.publish(motorMsg)
@@ -294,45 +296,43 @@ def ballPublishControl(closestTeamBallXZ, closestPurpleBallXZ):
     # Motor publish
     motorMsg = MotorControl()
     teamBallX, teamBallZ = closestTeamBallXZ
-    # motorMsg.x = teamBallX
-    # motorMsg.z = teamBallZ
-    motorMsg.x = 200
-    motorMsg.z = 200
+    motorMsg.x = teamBallX
+    motorMsg.z = teamBallZ
+    # testing code
+    # motorMsg.x = 200
+    # motorMsg.z = 200
     print(motorMsg)
     pubMotorControl.publish(motorMsg)
-
-    gripperMsg = GripperControl()
-    if gripperArmState == "forward":
-        gripperMsg.grip = "o"
-        gripperArmState = "backward"
-        gripperMsg.flip = gripperArmState
-    else:
-        gripperMsg.grip = "o"
-        gripperArmState = "forward"
-        gripperMsg.flip = gripperArmState
-    print(gripperMsg)
-    pubGripperControl.publish(gripperMsg)
-    # Gripper publish ( might just not handle closing and flipping backward here since ir can't be published)
+    # Testing code only =========
     # gripperMsg = GripperControl()
-    # if not closestPurpleBallXZ:
-    #     purpleBallZ = 99999
-    # else:
-    #     purpleBallX, purpleBallZ = closestPurpleBallXZ
-    # # Close when ball enter gripper range and flip backward no matter what color
-    # if ir == "y":
-    #     gripperClawState = "c"
-    #     gripperMsg.grip = gripperClawState
+    # if gripperArmState == "forward":
+    #     gripperMsg.grip = "o"
     #     gripperArmState = "backward"
     #     gripperMsg.flip = gripperArmState
-    #     closestBall = min(teamBallZ, purpleBallZ)
-    #     # if team ball is closer, keep gripping team ball, or else release purple ball
-    #     if closestBall == purpleBallZ:
-    #         gripperClawState = "o"
-    #         gripperMsg.grip = gripperClawState
-    #         gripperArmState = "forward"
-    #         gripperMsg.flip = gripperArmState
-
+    # else:
+    #     gripperMsg.grip = "o"
+    #     gripperArmState = "forward"
+    #     gripperMsg.flip = gripperArmState
     # print(gripperMsg)
+    # pubGripperControl.publish(gripperMsg)
+    # testing code end ============
+    # Gripper publish ( might just not handle closing and flipping backward here since ir can't be published)
+    gripperMsg = GripperControl()
+    if closestPurpleBallXZ is None:
+        purpleBallZ = 99999
+    else:
+        purpleBallX, purpleBallZ = closestPurpleBallXZ
+    # Close when ball enter gripper range and flip backward no matter what color ( should be handle at ir)
+
+    closestBall = min(teamBallZ, purpleBallZ)
+    # if team ball was closer, keep gripping team ball, or else release purple ball
+    if closestBall == purpleBallZ and closestBall != teamBallZ:
+        gripperClawState = "o"
+        gripperMsg.grip = gripperClawState
+        gripperArmState = "forward"
+        gripperMsg.flip = gripperArmState
+
+    print(gripperMsg)
     pubGripperControl.publish(gripperMsg)
 
     # To limit the change of decision
@@ -370,9 +370,9 @@ def getDepth(x, y, conf, clsName, depthFrame):
     return int(depth)
 
 
-def irCallback(msg):
-    global ir
-    ir = msg.data
+# def irCallback(msg):
+#     global ir
+#     ir = msg.data
 
 
 def ultrasonicCallback(msg):
