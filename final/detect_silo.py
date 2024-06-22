@@ -71,7 +71,7 @@ def callback(colorFrame, depthFrame):
                 clsName = names[cls]
 
                 # Skip if too low conf
-                if conf <= 60:
+                if conf <= 50:
                     continue
 
                 # Obtain xy which is centre coords of
@@ -112,7 +112,7 @@ def callback(colorFrame, depthFrame):
             closestTeamBallXZ = findClosestBall(teamBallRealXZs)
             # print(f"TEAMclosest ball: {closestTeamBallXZ}")
             closestPurpleBallXZ = findClosestBall(purpleBallRealXZs)
- 
+
             # print(f"purple closest ball {closestPurpleBallXZ}")
             if closestTeamBallXZ is None:
                 print("No closest team ball found, robot stop")
@@ -326,7 +326,7 @@ def ballPublishControl(closestTeamBallXZ, closestPurpleBallXZ):
     # Close when ball enter gripper range and flip backward no matter what color ( should be handle at ir)
 
     closestBall = min(teamBallZ, purpleBallZ)
-    
+
     # if team ball was closer, keep gripping team ball, or else release purple ball
     if closestBall == purpleBallZ and closestBall != teamBallZ:
         gripperClawState = "o"

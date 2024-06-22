@@ -66,35 +66,37 @@ void setup() {
   pos4 = 0;
 }
 
-void setTarget(String command){
-  if (command.startsWith("F")) {
+void loop() {
+  // Read serial input and update target
+  if (Serial.available()) {
+    String command = Serial.readStringUntil('\n');
+    if (command.startsWith("F")) {
       // Move forward
-      target = command.substring(1).toFloat(); // Extract distance from command
+      target = command.substring(1).toFloat()*0.367; // Extract distance from command
       dir = 'F';
-      Serial.println("Front");
+      // Serial.println("Front");
     } else if (command.startsWith("B")) {
       // Move backward
-      target = command.substring(1).toFloat(); // Extract distance from command
+      target = command.substring(1).toFloat()*0.367; // Extract distance from command
       dir = 'B';
-            Serial.println("Back");
+            // Serial.println("Back");
     } else if (command.startsWith("L")) {
       // Move left
-      target = command.substring(1).toFloat(); // Extract distance from command
+      target = command.substring(1).toFloat()*0.367; // Extract distance from command
       dir = 'L';
-            Serial.println("Left");
+            // Serial.println("Left");
     } else if (command.startsWith("R")) {
       // Move right
-      target = command.substring(1).toFloat(); // Extract distance from command
+      target = command.substring(1).toFloat()*0.367; // Extract distance from command
       dir = 'R';
-            Serial.println("Right");
+            // Serial.println("Right");
     }
     // Reset motor state to RUNNING when new target is set
     motorState = RUNNING; 
-}
+  }
 
-void movement(){
-      // PID constants - motor 1 and motor 2 and motor 4
-  float kp = 8.0;
+  // PID constants - motor 1 and motor 2 and motor 4
+  float kp = 10.0;
   float kd = 1.0;
   float ki = 0.1;
 
@@ -128,7 +130,7 @@ void movement(){
       target2 = -target;
       target3 = target;
       target4 = -target;
-      Serial.println("LeftTurn");
+      // Serial.println("LeftTurn");
       // delay(3000);
       break;
     case 'R':
@@ -187,7 +189,7 @@ void movement(){
     break;
     case 'R':
     //-------------------------------------------------- need calibrate
-    motor1.setSpeed(u1); // Motor 1 runs forward
+    motor1.setSpeed(u1+1); // Motor 1 runs forward
     motor2.setSpeed(u2+2); // Motor 2 and Motor 3 and Motor 4 runs forward
     motor3.setSpeed(u3+1); // Motor 2 and Motor 3 and Motor 4 runs forward
     motor4.setSpeed(u4-1); // Motor 2 and Motor 3 and Motor 4 runs forward
@@ -211,7 +213,7 @@ void movement(){
 
 if ((abs(e2) <= 2 && abs(e3) <= 2) || (abs(e1) <= 2 && abs(e4) <= 2)) {
     // If all close to target, stop motors
-    Serial.println("Stop");
+    // Serial.println("Stop");
     motor1.setSpeed(0);
     motor2.setSpeed(0);
     motor3.setSpeed(0);
@@ -227,51 +229,34 @@ if ((abs(e2) <= 2 && abs(e3) <= 2) || (abs(e1) <= 2 && abs(e4) <= 2)) {
   }
 
   // Print debug information
-  Serial.print(target);
-  Serial.print(" ");
-  Serial.print(pos1);
-  Serial.print(" ");
-  Serial.print(pos2);
-  Serial.print(" ");  
-  Serial.print(pos3);
-  Serial.print(" ");
-  Serial.print(pos4);
-  Serial.print(" ");
-  Serial.print(target1);
-  Serial.print(" ");
-  Serial.print(target2);
-  Serial.print(" ");  
-  Serial.print(target3);
-  Serial.print(" ");
-  Serial.print(target4);
-  Serial.print(" ");
-  Serial.print(e1);
-  Serial.print(" ");
-  Serial.print(e2);
-  Serial.print(" ");  
-  Serial.print(e3);
-  Serial.print(" ");
-  Serial.println(e4);
-  
+  // Serial.print(target);
+  // Serial.print(" ");
+  // Serial.print(pos1);
+  // Serial.print(" ");
+  // Serial.print(pos2);
+  // Serial.print(" ");  
+  // Serial.print(pos3);
+  // Serial.print(" ");
+  // Serial.print(pos4);
+  // Serial.print(" ");
+  // Serial.print(target1);
+  // Serial.print(" ");
+  // Serial.print(target2);
+  // Serial.print(" ");  
+  // Serial.print(target3);
+  // Serial.print(" ");
+  // Serial.print(target4);
+  // Serial.print(" ");
+  // Serial.print(e1);
+  // Serial.print(" ");
+  // Serial.print(e2);
+  // Serial.print(" ");  
+  // Serial.print(e3);
+  // Serial.print(" ");
+  // Serial.println(e4);
+
   // Delay to stabilize the loop
   delay(10);
-}
-
-void loop() {
-  // Read serial input and update target
-  if (Serial.available()) {
-    String command = Serial.readStringUntil('\n');
-    String command1 = command.substring(0, 4);
-    String command2 = command.substring(4);
-//    command = command1;
-    // target = command.toFloat() * 6 / PI;  // Update target position
-    // target = command.toFloat();  // Update target position
-    setTarget(command1);
-    movement();
-//    setTarget(command2);
-  }
-
-
 
 }
 
