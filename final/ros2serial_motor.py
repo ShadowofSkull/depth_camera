@@ -47,7 +47,7 @@ def grip_cb(msg):
 rospy.init_node("pub_xz_to_serial")
 rospy.Subscriber("motor_control", MotorControl, callback=motor_cb)
 rospy.Subscriber("gripper_control", GripperControl, callback=grip_cb)
-
+# bro pls rmb add \n
 try:
     # rate = rospy.Rate(1)
     time.sleep(2)
@@ -58,6 +58,14 @@ try:
     time.sleep(2)
 
     ser1.write("R2750".encode("utf=8"))
+    time.sleep(2)
+
+    ser1.write("R4375\n".encode("utf=8"))
+    time.sleep(2)
+    ser1.write("B2800\n".encode("utf=8"))
+    time.sleep(2)
+
+    ser1.write("R2750\n".encode("utf=8"))
     time.sleep(2)
 
     while True:
@@ -83,7 +91,7 @@ try:
                 distance = armState + str(z) + "\n"
                 print(distance)
                 ser1.write(distance.encode("utf=8"))
-            time.sleep(10)
+            time.sleep(5)
         except Exception as e:
             print("Fail", e)
         # rate.sleep()
