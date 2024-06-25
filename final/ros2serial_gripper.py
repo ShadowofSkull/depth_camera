@@ -37,7 +37,7 @@ try:
         try:
             print("writing")
             action = armState
-            ser1.write(action.encode("utf=8"))
+            ser1.write(action.encode())
             print(f"action:{action}")
         except Exception as e:
             print("Fail", e)
