@@ -16,6 +16,8 @@ while ser1 == None:
         time.sleep(1)
 ser1.reset_input_buffer()
 print("Serial OK")
+print("motor serial launched")
+
 x = 0
 z = 0
 armState = ""
@@ -80,7 +82,11 @@ try:
                 distance = armState + str(z) + "\n"
                 print(distance)
                 ser1.write(distance.encode())
-            time.sleep(5)
+            # Reset values
+            x = 0
+            z = 0
+            armState = ""
+            time.sleep(2)
         except Exception as e:
             print("Fail", e)
         time.sleep(1)

@@ -53,6 +53,7 @@ def distance(trigger_pin, echo_pin):
     return distance
 
 if __name__ == "__main__":
+    print("Ultrasonic Sensor launched")
     try:
         while not rospy.is_shutdown():
             dist1 = distance(GPIO_TRIGGER1, GPIO_ECHO1)

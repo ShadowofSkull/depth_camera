@@ -16,11 +16,8 @@ while ser1 == None:
         time.sleep(1)
 ser1.reset_input_buffer()
 print("Serial OK")
-
+print("gripper serial launched")
 armState = ""
-action = ""
-
-
 def grip_cb(msg):
     print("cb")
     global armState
@@ -36,9 +33,11 @@ try:
     
         try:
             print("writing")
-            action = armState
-            ser1.write(action.encode())
-            print(f"action:{action}")
+            
+            ser1.write(armState.encode())
+            print(f"armState:{armState}")
+            # Reset state
+            armState = ""
         except Exception as e:
             print("Fail", e)
         time.sleep(1)
