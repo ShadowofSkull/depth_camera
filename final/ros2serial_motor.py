@@ -16,6 +16,8 @@ while ser1 == None:
         time.sleep(1)
 ser1.reset_input_buffer()
 print("Serial OK")
+print("motor serial launched")
+
 x = 0
 z = 0
 armState = ""
@@ -29,10 +31,8 @@ def motor_cb(msg):
     global x, z
     x = msg.x
     z = msg.z
-    # formula to change distance mm value to encoder val
-    # encoder = distance // 10 (fake formula)
-    x = x - 50
-    z = z - 50
+
+
 
 
 def grip_cb(msg):
@@ -49,16 +49,15 @@ rospy.Subscriber("motor_control", MotorControl, callback=motor_cb)
 rospy.Subscriber("gripper_control", GripperControl, callback=grip_cb)
 # bro pls rmb add \n
 try:
-    # rate = rospy.Rate(1)
+    # Hardcode for area1 to 3 movement
+    ser1.write("R4375\n".encode())
+    print(r"R4375\n")
+    time.sleep(5)
+    ser1.write("B2800\n".encode())
+    time.sleep(5)
 
-
-    ser1.write("R4375\n".encode("utf=8"))
-    time.sleep(2)
-    ser1.write("B2800\n".encode("utf=8"))
-    time.sleep(2)
-
-    ser1.write("R2750\n".encode("utf=8"))
-    time.sleep(2)
+    ser1.write("R2750\n".encode())
+    time.sleep(5)
 
     while True:
         print(f"x{x},z {z}")
@@ -75,18 +74,21 @@ try:
             distance = direction_x + str(x) + "\n"
             print(distance)
             # write for x direction movement first
-            ser1.write(distance.encode("utf=8"))
+            ser1.write(distance.encode())
             # delay for x movement to finish
             time.sleep(5)
             if armState != "":
                 # carry out z movement
                 distance = armState + str(z) + "\n"
                 print(distance)
-                ser1.write(distance.encode("utf=8"))
-            time.sleep(5)
+                ser1.write(distance.encode())
+            # Reset values
+            x = 0
+            z = 0
+            armState = ""
+            time.sleep(2)
         except Exception as e:
             print("Fail", e)
-        # rate.sleep()
         time.sleep(1)
 
 except KeyboardInterrupt:
