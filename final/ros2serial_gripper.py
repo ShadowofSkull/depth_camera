@@ -29,14 +29,12 @@ def grip_cb(msg):
 
 rospy.init_node("pub2gripper")
 rospy.Subscriber("gripper_control", GripperControl, callback=grip_cb)
-
 try:
-
     while True:
     
         try:
             print("writing")
-            action = armState
+            action = armState + '\n'
             ser1.write(action.encode("utf=8"))
             print(f"action:{action}")
         except Exception as e:

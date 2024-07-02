@@ -50,15 +50,7 @@ rospy.Subscriber("gripper_control", GripperControl, callback=grip_cb)
 # bro pls rmb add \n
 try:
     # rate = rospy.Rate(1)
-    time.sleep(2)
 
-    ser1.write("R4375".encode("utf=8"))
-    time.sleep(2)
-    ser1.write("B2800".encode("utf=8"))
-    time.sleep(2)
-
-    ser1.write("R2750".encode("utf=8"))
-    time.sleep(2)
 
     ser1.write("R4375\n".encode("utf=8"))
     time.sleep(2)
