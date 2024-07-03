@@ -1,45 +1,66 @@
 import serial
 import time
 import rospy
-from astra_camera.msg import MotorControl, GripperControl
+from astra_camera.msg import GripperControl
+from threading import Thread, Lock
 
-# this code is to acquired rosmsg in python and publish it by serial to arduino
-# keep trying to connect to serial port
 ser1 = None
-while ser1 == None:
-    try:
-        # make sure to change the port to the correct port
-        ser1 = serial.Serial("/dev/ttyUSB0", 115200, timeout=1.0)
-    except:
-        print("error")
-        # retry every 1 sec
-        time.sleep(1)
-ser1.reset_input_buffer()
-print("Serial OK")
-print("gripper serial launched")
 armState = ""
-def grip_cb(msg):
-    print("cb")
-    global armState
-    armState = msg.flip
+lock = Lock()
 
-
-rospy.init_node("pub2gripper")
-rospy.Subscriber("gripper_control", GripperControl, callback=grip_cb)
-try:
-    while True:
-    
+def setup_serial():
+    global ser1
+    while ser1 is None:
         try:
-            print("writing")
-            armState = armState + '\n'
-            ser1.write(armState.encode())
-            print(f"armState:{armState}")
-            # Reset state
-            armState = ""
+            # Change the port to the correct port
+            ser1 = serial.Serial("/dev/ttyUSB0", 115200, timeout=1.0)
+            ser1.reset_input_buffer()
+            print("Serial OK")
+        except:
+            print("Error connecting to serial port. Retrying...")
+            # Retry every 1 sec
+            time.sleep(1)
+    print("Gripper serial launched")
+
+def grip_cb(msg):
+    global armState
+    with lock:
+        armState = msg.flip
+    print("Callback received, armState set to:", armState)
+
+def serial_writer():
+    global armState
+    while not rospy.is_shutdown():
+        try:
+            with lock:
+                if armState:
+                    ser1.write((armState + '\n').encode())
+                    print(f"armState sent: {armState}")
+                    # Reset state
+                    armState = ""
         except Exception as e:
-            print("Fail", e)
+            print("Serial write failed:", e)
         time.sleep(1)
 
-except KeyboardInterrupt:
-    print("Close Serial Communication")
-    ser1.close()
+if __name__ == "__main__":
+    setup_serial()
+    
+    try:
+        rospy.init_node("pub2gripper", anonymous=True)
+        rospy.Subscriber("gripper_control", GripperControl, grip_cb)
+        
+        serial_thread = Thread(target=serial_writer)
+        serial_thread.start()
+        
+        rospy.spin()
+        
+    except rospy.ROSInterruptException:
+        print("ROS Node terminated.")
+        
+    except KeyboardInterrupt:
+        print("Close Serial Communication")
+        
+    finally:
+        if ser1:
+            ser1.close()
+        print("Serial port closed.")
