@@ -38,7 +38,8 @@ MotorState motorState = STOPPED;
 
 void setup() {
   Serial.begin(115200);
-
+  while (!Serial) {;} // wait for serial to connect
+  Serial.setTimeout(2000); // increase timeout time for reading string
   // Set encoder pins as inputs with pull-up resistors
   pinMode(ENCA1, INPUT_PULLUP);
   pinMode(ENCB1, INPUT_PULLUP);
@@ -67,8 +68,8 @@ void setup() {
 }
 
 void loop() {
-  // Read serial input and update target
-  if (Serial.available()) {
+  // Read serial input and update target if motorState is stopped to avoid interrupting unfinish movement
+  if (Serial.available() && motorState == STOPPED) {
     String command = Serial.readStringUntil('\n');
     if (command.startsWith("F")) {
       // Move forward

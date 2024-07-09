@@ -4,12 +4,18 @@
   - [Setup ROS2 \& OpenNI SDK (Windows 11) *No longer using*](#setup-ros2--openni-sdk-windows-11-no-longer-using)
   - [Setup ROS \& OpenNI SDK (WIN 11) *Preferred*](#setup-ros--openni-sdk-win-11-preferred)
     - [IMPORTANT NOTES](#important-notes)
+  - [QuickStart](#quickstart)
   - [How to take picture](#how-to-take-picture)
+  - [Getting Detect.py to work](#getting-detectpy-to-work)
   - [Integration of ROS depth camera \& OpenCV](#integration-of-ros-depth-camera--opencv)
-  - [Docker](#docker)
+  - [Jetson Orin Nano](#jetson-orin-nano)
+    - [Reinstall jetpack (The OS)](#reinstall-jetpack-the-os)
+  - [Python virtual env](#python-virtual-env)
+  - [Docker (able to use ros but udev which handles usb does not work)](#docker-able-to-use-ros-but-udev-which-handles-usb-does-not-work)
     - [Installation](#installation)
-    - [QuickStart](#quickstart)
+    - [QuickStart](#quickstart-1)
     - [Extra commands](#extra-commands)
+    - [Building image from scratch](#building-image-from-scratch)
   - [Issues](#issues)
   - [Future Plans](#future-plans)
   - [Author](#author)
@@ -41,6 +47,13 @@
         ./scripts/create_udev_rules
         sudo udevadm control --reload && sudo udevadm trigger
      ```
+
+## QuickStart
+1. Run `roslaunch astra_camera astra.launch`
+2. Run `python3 ultrasonic_sensor.py`
+3. Run `python3 detect_silo.py`
+4. Run `python3 ros2serial_gripper.py` and `python3 ros2serial_gripper.py`
+5. Turn on motor and gripper power
 
 ## How to take picture
 1. Use below command
