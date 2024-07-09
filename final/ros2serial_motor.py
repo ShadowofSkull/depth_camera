@@ -52,12 +52,12 @@ try:
     # rate = rospy.Rate(1)
 
     ser1.write("R4375\n".encode("utf=8"))
-    time.sleep(2)
+    time.sleep(10)
     ser1.write("B2800\n".encode("utf=8"))
-    time.sleep(2)
+    time.sleep(10)
 
     ser1.write("R2750\n".encode("utf=8"))
-    time.sleep(2)
+    time.sleep(10)
 
     while True:
         print(f"x{x},z {z}")
