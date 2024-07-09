@@ -6,7 +6,7 @@ Servo myservo;  // create servo object to control a servo
 int pos = 0;    // variable to store the servo position
 
 void setup() {
-  Serial.begin(9600); // Set baud rate to 9600
+  Serial.begin(115200); // Set baud rate to 9600
   
   // Serial.setTimeout(10000);
   // Serial.println("Arduino ready.");

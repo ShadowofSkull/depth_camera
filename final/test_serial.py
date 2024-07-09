@@ -2,7 +2,7 @@ import serial
 import time
 
 # Initialize serial connection
-ser = serial.Serial("COM4", 9600, timeout=1)
+ser = serial.Serial("COM4", 115200, timeout=1)
 time.sleep(2)  # Wait for the serial connection to initialize
 
 # Send data to Arduino
