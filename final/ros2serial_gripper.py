@@ -34,7 +34,7 @@ def serial_writer():
         try:
             with lock:
                 if armState:
-                    ser1.write((armState + '\n').encode())
+                    ser1.write((armState + '\n').encode("utf-8"))
                     print(f"armState sent: {armState}")
                     # Reset state
                     armState = ""

@@ -4,13 +4,13 @@ import rospy
 from astra_camera.msg import GripperControl 
 import serial
 
-ARDUINO_PORT = '/dev/ttyACM1' #port of arduino mega adk on jetson nano
+ARDUINO_PORT = '/dev/ttyACM0' #port of arduino mega adk on jetson nano
 BAUD_RATE = 9600 
 
 arduino_serial = serial.Serial(ARDUINO_PORT, BAUD_RATE, timeout=1)
 
 def gripper_control_callback(msg):
-    command = msg.command
+    command = msg.grip
     
     arduino_serial.write(command.encode()) #writes the command to the arduino port, sending the command to it to o (open), or c(close)
 
