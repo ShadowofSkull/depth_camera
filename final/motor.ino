@@ -68,6 +68,10 @@ void setup() {
 }
 
 void loop() {
+  // To clear buffer while motor still running to make sure command received is in realtime
+  if (Serial.available() && motorState == RUNNING){
+    Serial.read();
+  }
   // Read serial input and update target if motorState is stopped to avoid interrupting unfinish movement
   if (Serial.available() && motorState == STOPPED) {
     String command = Serial.readStringUntil('\n');
