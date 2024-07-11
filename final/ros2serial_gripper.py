@@ -13,7 +13,7 @@ def setup_serial():
     while ser1 is None:
         try:
             # Change the port to the correct port
-            ser1 = serial.Serial("/dev/ttyUSB0", 115200, timeout=1.0)
+            ser1 = serial.Serial("/dev/ttyACM0", 115200, timeout=1.0)
             ser1.reset_input_buffer()
             print("Serial OK")
         except:
@@ -31,13 +31,19 @@ def grip_cb(msg):
 def serial_writer():
     global armState
     while not rospy.is_shutdown():
+        print("in loop")
         try:
             with lock:
                 if armState:
+                    print("have armstate")
                     ser1.write((armState + '\n').encode("utf-8"))
                     print(f"armState sent: {armState}")
+                    if ser1.in_waiting > 0:
+                        line = ser1.readline().decode("utf-8").rstrip()  # Decode the received data
+                        print(f"Received: {line}")  # Debug print
                     # Reset state
                     armState = ""
+                print("in lock")
         except Exception as e:
             print("Serial write failed:", e)
         time.sleep(1)

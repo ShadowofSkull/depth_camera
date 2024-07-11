@@ -23,6 +23,7 @@ z = 0
 armState = ""
 direction_x = ""
 distance = ""
+motorState = "1" # stopped since motor not running at the start
 
 # Lock for thread safety
 lock = threading.Lock()
@@ -43,23 +44,26 @@ def grip_cb(msg):
 
 
 def main_loop():
-    global x, z, armState, direction_x, distance
+    global x, z, armState, direction_x, distance, motorState
     
     # Hardcode initial movements
-    ser1.write("R4375\n".encode())
-    time.sleep(5)
-    ser1.write("B2800\n".encode())
-    time.sleep(5)
-    ser1.write("R2750\n".encode())
-    time.sleep(5)
+    # ser1.write("R4375\n".encode())
+    # time.sleep(5)
+    # ser1.write("B2800\n".encode())
+    # time.sleep(5)
+    # ser1.write("R2750\n".encode())
+    # time.sleep(5)
 
     while True:
         with lock:
             current_x = x
             current_z = z
             current_armState = armState
+            x = 0 # Reset variable
+            z = 0
+            armState = ""
         
-        print(f"x{current_x}, z{current_z}")
+        
 
         try:
             print("Writing commands to serial")
@@ -71,28 +75,42 @@ def main_loop():
                 current_x = abs(current_x)
             else:
                 direction_x = "R"
-
+            # Update motorState (arduino side need modification to work with this)
+            if ser1.in_waiting > 0:
+                line = ser1.readline().decode("utf-8").rstrip()  # Decode the received data
+                print(f"Received stop: {line}")  # Debug print
+                motorState = line
+            # Only send move commands if the motor stopped so skip the command if not
+            # 1 means stop 0 is running
+            if motorState == "0":
+                print("in skip")
+                time.sleep(1)
+                continue
+            
             # Send x direction movement command
             distance = direction_x + str(current_x) + "\n"
             print(f"Distance command: {distance}")
-            ser1.write(distance.encode())
+            ser1.write(distance.encode("utf-8"))
             time.sleep(5)  # Delay to allow for x movement
+
+            if ser1.in_waiting > 0:
+                line = ser1.readline().decode("utf-8").rstrip()  # Decode the received data
+                print(f"Received: {line}")  # Debug print
 
             # If armState is set, send z direction movement command
             if current_armState:
                 distance = current_armState + str(current_z) + "\n"
                 print(f"Distance command: {distance}")
-                ser1.write(distance.encode())
-
-            # Reset variables
-            with lock:
-                x = 0
-                z = 0
-                armState = ""
+                ser1.write(distance.encode('utf-8'))
+                
+                    
             time.sleep(2)  # Short delay before next iteration
+            if ser1.in_waiting > 0:
+                line = ser1.readline().decode("utf-8").rstrip()  # Decode the received data
+                print(f"Received: {line}")  # Debug print
         except Exception as e:
             print(f"Failed to send command: {e}")
-        time.sleep(1)
+        time.sleep(5)
 
 if __name__ == "__main__":
     try:

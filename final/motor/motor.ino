@@ -68,10 +68,6 @@ void setup() {
 }
 
 void loop() {
-  // To clear buffer while motor still running to make sure command received is in realtime
-  if (Serial.available() && motorState == RUNNING){
-    Serial.read();
-  }
   // Read serial input and update target if motorState is stopped to avoid interrupting unfinish movement
   if (Serial.available() && motorState == STOPPED) {
     String command = Serial.readStringUntil('\n');
@@ -97,7 +93,9 @@ void loop() {
             // Serial.println("Right");
     }
     // Reset motor state to RUNNING when new target is set
-    motorState = RUNNING; 
+    motorState = RUNNING;
+    Serial.print(dir);
+    Serial.println(target);
   }
 
   // PID constants - motor 1 and motor 2 and motor 4
