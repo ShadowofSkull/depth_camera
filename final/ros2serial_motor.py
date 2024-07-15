@@ -78,7 +78,7 @@ def main_loop():
             # Update motorState (arduino side need modification to work with this)
             if ser1.in_waiting > 0:
                 line = ser1.readline().decode("utf-8").rstrip()  # Decode the received data
-                print(f"Received stop: {line}")  # Debug print
+                print(f"Received motorstate 1: {line}")  # Debug print
                 motorState = line
             # Only send move commands if the motor stopped so skip the command if not
             # 1 means stop 0 is running
@@ -89,24 +89,24 @@ def main_loop():
             
             # Send x direction movement command
             distance = direction_x + str(current_x) + "\n"
-            print(f"Distance command: {distance}")
+            # print(f"Distance command: {distance}")
             ser1.write(distance.encode("utf-8"))
             time.sleep(5)  # Delay to allow for x movement
 
             # Update motorState
             if ser1.in_waiting > 0:
                 line = ser1.readline().decode("utf-8").rstrip()  # Decode the received data
-                print(f"Received motor state: {line}")  # Debug print
+                print(f"Received motor state2: {line}")  # Debug print
                 motorState = line
             # Verify x axis movement
-            if ser1.in_waiting > 0:
-                line = ser1.readline().decode("utf-8").rstrip()  # Decode the received data
-                print(f"Received x move: {line}")  # Debug print
+            # if ser1.in_waiting > 0:
+            #     line = ser1.readline().decode("utf-8").rstrip()  # Decode the received data
+            #     print(f"Received x move: {line}")  # Debug print
 
             # If armState is set, send z direction movement command
             if current_armState:
                 distance = current_armState + str(current_z) + "\n"
-                print(f"Distance command: {distance}")
+                # print(f"Distance command: {distance}")
                 ser1.write(distance.encode('utf-8'))
                 
                     
