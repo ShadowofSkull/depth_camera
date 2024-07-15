@@ -93,10 +93,10 @@ void loop() {
             // Serial.println("Right");
     }
     // Reset motor state to RUNNING when new target is set
+    Serial.print(dir); // Echo received data back
+    Serial.println(target);
     motorState = RUNNING;
     Serial.println(motorState);
-    Serial.print(dir);
-    Serial.println(target);
   }
 
   // PID constants - motor 1 and motor 2 and motor 4
