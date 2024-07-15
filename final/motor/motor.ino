@@ -94,6 +94,7 @@ void loop() {
     }
     // Reset motor state to RUNNING when new target is set
     motorState = RUNNING;
+    Serial.println(motorState);
     Serial.print(dir);
     Serial.println(target);
   }
@@ -216,7 +217,6 @@ void loop() {
 
 if ((abs(e2) <= 2 && abs(e3) <= 2) || (abs(e1) <= 2 && abs(e4) <= 2)) {
     // If all close to target, stop motors
-    // Serial.println("Stop");
     motor1.setSpeed(0);
     motor2.setSpeed(0);
     motor3.setSpeed(0);
@@ -229,6 +229,7 @@ if ((abs(e2) <= 2 && abs(e3) <= 2) || (abs(e1) <= 2 && abs(e4) <= 2)) {
     eprev1 = 0, eprev2 = 0, eprev3 = 0, eprev4 = 0;
     // Reset motor state to STOPPED
     motorState = STOPPED;
+    Serial.println(motorState);
   }
 
   // Print debug information

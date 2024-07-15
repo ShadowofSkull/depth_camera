@@ -93,9 +93,15 @@ def main_loop():
             ser1.write(distance.encode("utf-8"))
             time.sleep(5)  # Delay to allow for x movement
 
+            # Update motorState
             if ser1.in_waiting > 0:
                 line = ser1.readline().decode("utf-8").rstrip()  # Decode the received data
-                print(f"Received: {line}")  # Debug print
+                print(f"Received motor state: {line}")  # Debug print
+                motorState = line
+            # Verify x axis movement
+            if ser1.in_waiting > 0:
+                line = ser1.readline().decode("utf-8").rstrip()  # Decode the received data
+                print(f"Received x move: {line}")  # Debug print
 
             # If armState is set, send z direction movement command
             if current_armState:
