@@ -2,4 +2,12 @@
 2. Run astra camera node 
 
 1. The camera should detect ball distance, and send x / z coordinate to the motor_control topic. Where the motor ino will read and move towards it. 
-2. The IR sensor from gripper ino will detect and 
+2. The IR sensor from gripper ino will detect if ball is in the gripper, then it will flip. 
+3. Then camera need to detect silo, with distance, then send x,z command to move towards it. Once the ultrasonic detect <50, it will stop and send the command o to open the gripper and flip 
+4. Then the robot repeats the loop of looking for the ball and move towards the ball, then IR sensors will detect ball is in gripper again. 
+
+
+Backup : 
+Manual Controll using PS2.
+
+
