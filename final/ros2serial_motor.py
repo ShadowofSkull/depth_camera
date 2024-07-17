@@ -165,3 +165,7 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("Closing Serial Communication")
         ser1.close()
+    finally:
+        if ser1:
+            ser1.close()
+        print("Serial port closed.")

@@ -34,7 +34,7 @@ void setup() {
 void loop() {
   // Check if either pin 6 or pin 7 is LOW
   if (digitalRead(6) == LOW) {
-    state = 1;
+    state = 0;
     digitalWrite(13, HIGH);
     servo1.write(95); // rotate servo motor to 95 degree
     servo2.write(85);
@@ -57,6 +57,7 @@ void loop() {
           servo2.write(85);
           delay(100);
           servoHcommand(0);
+          
           // Serial.println("Turn Forward");
           state = 0; // Exit the loop after handling the command
           inString = "";

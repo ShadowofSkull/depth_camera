@@ -13,7 +13,7 @@ def setup_serial():
     while ser1 is None:
         try:
             # Change the port to the correct port
-            ser1 = serial.Serial("/dev/ttyACM0", 115200, timeout=1.0)
+            ser1 = serial.Serial("/dev/ttyUSB0", 115200, timeout=1.0)
             ser1.reset_input_buffer()
             print("Serial OK")
         except:
