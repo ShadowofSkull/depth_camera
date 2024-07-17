@@ -23,11 +23,11 @@ def callback(colorFrame, depthFrame):
     global frame_counter, model, gripperArmState
     frame_counter += 1
 
-    # Process every 5th frame
+    # Process every 60th frame
     if frame_counter % 60 != 0:
         return
 
-    # Convert ROS msg to cv nparray that's suitable for model
+     # Convert ROS msg to cv nparray that's suitable for the model
     bridge = CvBridge()
     try:
         colorFrame = bridge.imgmsg_to_cv2(colorFrame, "bgr8")
@@ -82,39 +82,31 @@ def callback(colorFrame, depthFrame):
     if detectionName == "couch":
         couchPublishControl()
     else:
-        if not teamBallRealXZs:
-            print("No team ball found, robot stop")
+        if not teamBallRealXZs and not purpleBallRealXZs:
+            print("No balls found, robot stop")
+            stopRobot()
             return
 
         closestTeamBallXZ = findClosestBall(teamBallRealXZs)
         closestPurpleBallXZ = findClosestBall(purpleBallRealXZs)
 
-        if closestTeamBallXZ is None:
-            print("No closest team ball found, robot stop")
+        if closestTeamBallXZ is None and closestPurpleBallXZ is None:
+            print("No closest balls found, robot stop")
+            stopRobot()
             return
 
         ballPublishControl(closestTeamBallXZ, closestPurpleBallXZ)
 
 
 def findClosestBall(ballRealXZs):
-    if len(ballRealXZs) == 1:
-        return ballRealXZs[0]
-
-    closestBallXZ = []
-    for i in range(len(ballRealXZs)):
-        if closestBallXZ == []:
-            closestBallXZ.append(ballRealXZs[i][0])
-            closestBallXZ.append(ballRealXZs[i][1])
-        elif ballRealXZs[i][1] < closestBallXZ[1]:
-            closestBallXZ[0] = ballRealXZs[i][0]
-            closestBallXZ[1] = ballRealXZs[i][1]
-
-    if not closestBallXZ:
-        print(closestBallXZ)
-        print("list empty")
+    if not ballRealXZs:
         return None
 
-    print(f"if function find closest: {closestBallXZ}")
+    closestBallXZ = ballRealXZs[0]
+    for ball in ballRealXZs:
+        if ball[1] < closestBallXZ[1]:
+            closestBallXZ = ball
+
     return closestBallXZ
 
 
@@ -140,8 +132,12 @@ def ballPublishControl(closestTeamBallXZ, closestPurpleBallXZ):
     print("Publishing for balls")
     # Motor publish
     motorMsg = MotorControl()
-    motorMsg.x = closestTeamBallXZ[0]
-    motorMsg.z = closestTeamBallXZ[1]
+    if closestTeamBallXZ:
+        motorMsg.x = closestTeamBallXZ[0]
+        motorMsg.z = closestTeamBallXZ[1]
+    elif closestPurpleBallXZ:
+        motorMsg.x = closestPurpleBallXZ[0]
+        motorMsg.z = closestPurpleBallXZ[1]
     pubMotorControl.publish(motorMsg)
 
     # Gripper publish
@@ -152,6 +148,13 @@ def ballPublishControl(closestTeamBallXZ, closestPurpleBallXZ):
 
     # Delay to simulate action
     time.sleep(5)
+
+
+def stopRobot():
+    motorMsg = MotorControl()
+    motorMsg.x = 0
+    motorMsg.z = 0
+    pubMotorControl.publish(motorMsg)
 
 
 def calcX(depth, x, colorFrame):
