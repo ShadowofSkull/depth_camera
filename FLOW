@@ -1,0 +1,5 @@
+1. Run the nodes ros2serial_gripper and motor to communicate to the arduino gripper and motor. 
+2. Run astra camera node 
+
+1. The camera should detect ball distance, and send x / z coordinate to the motor_control topic. Where the motor ino will read and move towards it. 
+2. The IR sensor from gripper ino will detect and 
