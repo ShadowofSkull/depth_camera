@@ -16,6 +16,8 @@ while ser1 is None:
 ser1.reset_input_buffer()
 print("Serial OK")
 print("Motor serial launched")
+time.sleep(3)
+print("after 3 sec delay")
 
 # Global variables
 x = 0
@@ -62,7 +64,7 @@ def main_loop():
             x = 0 # Reset variable
             z = 0
             armState = ""
-        if current_x == 0 and current_z == 0:
+        if current_x == 0 and current_z == 0 and armState:
             continue
         
 
@@ -93,7 +95,7 @@ def main_loop():
             # print(f"Distance command: {distance}")
             print(f"distance {distance}")
             ser1.write(distance.encode("utf-8"))
-
+            time.sleep(1)
             # Verify x axis movement
             if ser1.in_waiting > 0:
                 line = ser1.read_until(b"\n").decode("utf-8").rstrip()  # Decode the received data
@@ -101,9 +103,9 @@ def main_loop():
             # Update motorState
             if ser1.in_waiting > 0:
                 line = ser1.read_until(b"\n").decode("utf-8").rstrip()  # Decode the received data
-                print(f"Received motorstate start 1: {line}")  # Debug print
+                print(f"Received motorstate start should be 0: {line}")  # Debug print
                 motorState = line
-                print(f"in input {motorState}")
+                print(f"Motor state should be 0: {motorState}")
             # Wait till motor stop to proceed
             while motorState == "0":
                 print(motorState)
@@ -111,32 +113,28 @@ def main_loop():
                 # Update motorState
                 if ser1.in_waiting > 0:
                     line = ser1.read_until(b"\n").decode("utf-8").rstrip()  # Decode the received data
-                    print(f"Received motorstate stop 1: {line}")  # Debug print
+                    print(f"Received motorstate stop should be 1: {line}")  # Debug print
                     motorState = line
-            print("104")
             # If armState is set, send z direction movement command
             if current_armState:
-                print("107")
                 # print(f"Distance command: {distance}")
 
-                print("118")
                 # ser1.reset_input_buffer()
                 distance = current_armState + str(current_z) + "\n"
                 print(distance)
                 ser1.write(distance.encode('utf-8'))
-                # time.sleep(1)
+                time.sleep(1)
                 # print(motorState)
                 # Verify z axis movement
                 if ser1.in_waiting > 0:
                     line = ser1.read_until(b"\n").decode("utf-8").rstrip()  # Decode the received data
                     print(f"Received z move: {line}")  # Debug print
-                print("133")
                 # Update motorState
                 if ser1.in_waiting > 0:
                     line = ser1.read_until(b"\n").decode("utf-8").rstrip()  # Decode the received data
-                    print(f"Received motorstate start 2: {line}")  # Debug print
+                    print(f"Received motorstate start 2 should be 0: {line}")  # Debug print
                     motorState = line
-                    print(f"in input {motorState}")
+                    print(f"0 properly assigned to motorState: {motorState}")
                 
                 while motorState == "0":
                     print(motorState)
@@ -144,7 +142,7 @@ def main_loop():
                     # Update motorState
                     if ser1.in_waiting > 0:
                         line = ser1.read_until(b"\n").decode("utf-8").rstrip()  # Decode the received data
-                        print(f"Received motorstate stop 2: {line}")  # Debug print
+                        print(f"Received motorstate stop 2 should be 1: {line}")  # Debug print
                         motorState = line
                         print(motorState)
                   
