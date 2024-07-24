@@ -40,22 +40,24 @@ def main_loop():
     global key
 
     while True:
-        print("start")
         with lock:
             current_key = key
+            print(f"current key: {current_key}")
             key = ""
-        if key:
+        if not current_key:
+            print("skip")
+            time.sleep(0.5)
             continue
 
         try:
             print("Writing commands to serial")
-            print(f"key: {key}")
-
-            ser1.write(key.encode("utf-8"))
+            print(f"key: {current_key}")
+            current_key = current_key + "\n"
+            ser1.write(current_key.encode("utf-8"))
 
         except Exception as e:
             print(f"Failed to send command: {e}")
-        time.sleep(0.1)
+        time.sleep(0.5)
 
 
 if __name__ == "__main__":

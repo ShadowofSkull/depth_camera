@@ -71,7 +71,7 @@ void loop() {
         motor2.setSpeed(speed); // Motor 2 and Motor 3 and Motor 4 runs forward
         motor3.setSpeed(speed); // Motor 2 and Motor 3 and Motor 4 runs forward
         motor4.setSpeed(speed); // Motor 2 and Motor 3 and Motor 4 runs forward
-        Serial.println("hi");
+        
         break;
         case 's':
         //-------------------------------------------------- need calibrate
@@ -98,7 +98,7 @@ void loop() {
         //--------------------------------------------------------------------
         break;
     } 
-    delay(100);
+    delay(500);
   }
   else {
     motor1.setSpeed(0); // Motor 1 runs forward
@@ -108,6 +108,6 @@ void loop() {
   }
 
   // Delay to stabilize the loop
-  delay(10);
+//  delay(500);
 
 }
