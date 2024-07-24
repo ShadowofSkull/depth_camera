@@ -101,6 +101,7 @@ if __name__=="__main__":
                 y = 0
                 z = 0
                 th = 0
+                # ctrl c
                 if (key == '\x03'):
                     break
 
