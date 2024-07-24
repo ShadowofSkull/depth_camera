@@ -71,7 +71,6 @@ void loop() {
         motor2.setSpeed(speed); // Motor 2 and Motor 3 and Motor 4 runs forward
         motor3.setSpeed(speed); // Motor 2 and Motor 3 and Motor 4 runs forward
         motor4.setSpeed(speed); // Motor 2 and Motor 3 and Motor 4 runs forward
-        
         break;
         case 's':
         //-------------------------------------------------- need calibrate

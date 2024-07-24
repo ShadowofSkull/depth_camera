@@ -10,14 +10,20 @@ import threading
 # receive wasd then decide here what command to send F100, R10
 # Attempt to connect to the serial port
 ser1 = None
-while ser1 is None:
+ser2 = None
+
+while ser1 is None and ser2 is None:
     try:
         ser1 = serial.Serial("/dev/ttyACM0", 115200, timeout=1.0)
+        ser2 = serial.Serial("/dev/ttyUSB0", 115200, timeout=1.0)
+
     except Exception as e:
         print(f"Error: {e}")
         time.sleep(1)
 
 ser1.reset_input_buffer()
+ser2.reset_input_buffer()
+
 print("Serial OK")
 print("Motor serial launched")
 time.sleep(3)
@@ -54,6 +60,7 @@ def main_loop():
             print(f"key: {current_key}")
             current_key = current_key + "\n"
             ser1.write(current_key.encode("utf-8"))
+            ser2.write(current_key.encode("utf-8"))
 
         except Exception as e:
             print(f"Failed to send command: {e}")
@@ -72,7 +79,11 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("Closing Serial Communication")
         ser1.close()
+        ser2.close()
+
     finally:
         if ser1:
             ser1.close()
+        if ser2:
+            ser2.close()
         print("Serial port closed.")

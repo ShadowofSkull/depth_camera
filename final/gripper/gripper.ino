@@ -11,7 +11,7 @@ const int SERVOH_PIN = 12;
 
 // int currentNum = 0;
 
-int state = 0;
+bool isFront = true;
 String inString = "";
 
 Servo servo; // create servo object to control a servo
@@ -19,7 +19,7 @@ Servo servo; // create servo object to control a servo
 void setup() {
   Serial.begin(115200);       // initialize serial port
   while (!Serial) {;} // wait for serial to connect
-  Serial.setTimeout(2000); // increase timeout time for reading string
+ 
   servo1.attach(SERVO1_PIN);  // attaches the servo on pin 9 to the servo object
   servo2.attach(SERVO2_PIN);
   servoH.attach(SERVOH_PIN);
@@ -30,75 +30,76 @@ void setup() {
   pinMode(6, INPUT);
   pinMode(7, INPUT);
 }
+//close grip
+//servo1.write(95); 
+//servo2.write(85);
+// open grip
+//servo1.write(70); 
+//servo2.write(120);
+// flip forward
+//servoHcommand(0);
+// flip backward
+//servoHcommand(1);
 
 void loop() {
   // Check if either pin 6 or pin 7 is LOW
-  if (digitalRead(6) == LOW) {
-    state = 0;
-    digitalWrite(13, HIGH);
-    servo1.write(95); // rotate servo motor to 95 degree
-    servo2.write(85);
-    delay(100);
-    // Serial.println("CLOSING");
-    servoHcommand(1);
-    // Serial.println("Turn Backward");
+  if (Serial.available()) {
+    String command = Serial.readStringUntil('\n');
 
-    // Stay in this loop until the state changes
-    while (state == 1) {
-      if (Serial.available() > 0) {
-        inString = Serial.readStringUntil('\n');
+    switch (command.charAt(0)){
+        case 'j':
+        servo1.write(95); 
+        servo2.write(85);
+        break;
+        case 'k':
+        servo1.write(70); 
+        servo2.write(120);
+        break;
+        case 'l':
+        servoHcommand(0);
+        break;
+        case ';':
+        servoHcommand(1);
+        break;
+    } 
+    delay(500);
 
-        if (inString == "forward") {
-          servo1.write(70); // rotate servo motor to 70 degree
-          servo2.write(120);
-          // Serial.println("Opening");
-          delay(1000);
-          servo1.write(95); // rotate servo motor to 95 degree
-          servo2.write(85);
-          delay(100);
-          servoHcommand(0);
-          
-          // Serial.println("Turn Forward");
-          state = 0; // Exit the loop after handling the command
-          inString = "";
-        }
-      }
-    }
-  } else {
-    // Only execute this part if the state is not 1
-    servo1.write(70);
-    servo2.write(120);
-    // Serial.println("OPENING2");
   }
 }
 
 void servoHcommand(int con) {
-  int newNom = 0;
-  int currentNum = 0;
-
-  if (con == 0) {
+  int newNom;
+  int currentNum;
+  int high = servoH.read();
+  Serial.println(high);
+  if (con == 0 && high == 135) {
     currentNum = 135;
     newNom = 6;
-  } else if (con == 1) {
+    
+  } else if (con == 1 && high == 6) {
     currentNum = 6;
     newNom = 135;
+    
+  } else if (con == 0 && high == 6){
+    currentNum = 6;
+    newNom = 6;
+  } else if (con == 1 && high == 135){
+    currentNum = 135;
+    newNom = 135;
   }
-
-  // if (newNom >= 6 && newNom <= 135) {
+  
   if (currentNum < newNom) {
     for (int i = currentNum; i <= newNom; i++) {
       servoH.write(i);
-      Serial.println("Turn 180");
+      // Serial.println("Turn 180");
       delay(50);
     }
   } else {
     for (int i = currentNum; i >= newNom; i--) {
       servoH.write(i);
-      Serial.println("Turn back");
+      // Serial.println("Turn back");
       delay(50);
     }
   }
-  // }
-  // currentNum = newNom;
+
 }
-sudo apt-get install npm.

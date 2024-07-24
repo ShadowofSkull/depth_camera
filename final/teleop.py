@@ -66,7 +66,7 @@ def vels(speed):
 
 if __name__ == "__main__":
     settings = termios.tcgetattr(sys.stdin)
-    validKeys = ["w", "a", "s", "d"]
+    validKeys = ["w", "a", "s", "d", "j", "k", "l", ";"]
     rospy.init_node("vel_Publisher")
     pub = rospy.Publisher("keyboard", String, queue_size=1)
 
