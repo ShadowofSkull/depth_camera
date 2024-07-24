@@ -39,7 +39,7 @@ MotorState motorState = STOPPED;
 void setup() {
   Serial.begin(115200);
   while (!Serial) {;} // wait for serial to connect
-  Serial.setTimeout(2000); // increase timeout time for reading string
+  // Serial.setTimeout(2000); // increase timeout time for reading string
   // Set encoder pins as inputs with pull-up resistors
   pinMode(ENCA1, INPUT_PULLUP);
   pinMode(ENCB1, INPUT_PULLUP);
