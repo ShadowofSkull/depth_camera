@@ -1,8 +1,6 @@
 #include <ros.h>
 #include <geometry_msgs/Twist.h>
 #include <std_msgs/String.h>
-#include <util/atomic.h>
-#include "CytronMotorDriver.h"
 #include <math.h>
 
 #define ENCA1 18 // Encoder 1 (LB)
@@ -25,10 +23,8 @@ char dir;
 int count = 0;
 int e1, e2, e3, e4;
 
-CytronMD motor1(PWM_DIR, 4, 5); // Motor 1 (LB)
-CytronMD motor2(PWM_DIR, 6, 7); // Motor 2 (LF)
-CytronMD motor3(PWM_DIR, 8, 9); // Motor 3 (RF)
-CytronMD motor4(PWM_DIR, 10, 11); // Motor 4 (RB)
+// Create ROS node handle
+ros::NodeHandle nh;
 
 // Define states
 enum MotorState {
@@ -38,10 +34,7 @@ enum MotorState {
 
 MotorState motorState = STOPPED;
 
-// ROS node handle
-ros::NodeHandle nh;
-
-// ROS topic to receive Twist commands (linear and angular velocities)
+// ROS callback function for Twist messages
 void twistCallback(const geometry_msgs::Twist& twist_msg) {
   float linearX = twist_msg.linear.x;
   float angularZ = twist_msg.angular.z;
@@ -69,15 +62,19 @@ void twistCallback(const geometry_msgs::Twist& twist_msg) {
   motorState = RUNNING;
 }
 
-// ROS subscriber for Twist commands
-ros::Subscriber<geometry_msgs::Twist> twistSub("/cmd_vel", &twistCallback);
+// ROS subscriber for Twist messages
+ros::Subscriber<geometry_msgs::Twist> twistSub("/motor_control", &twistCallback);
 
 void setup() {
   Serial.begin(115200);
   while (!Serial) {;} // Wait for serial to connect
 
+  // Initialize ROS node
   nh.getHardware()->setBaud(115200);
   nh.initNode();
+
+  // Set up ROS subscriber
+  nh.subscribe(twistSub);
 
   // Set up encoders
   pinMode(ENCA1, INPUT_PULLUP);
@@ -93,21 +90,10 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(ENCA2), readEncoder2, RISING);
   attachInterrupt(digitalPinToInterrupt(ENCA3), readEncoder3, RISING);
   attachInterrupt(digitalPinToInterrupt(ENCA4), readEncoder4, RISING);
-
-  motor1.setSpeed(0);
-  motor2.setSpeed(0);
-  motor3.setSpeed(0);
-  motor4.setSpeed(0);
-
-  pos1 = 0;
-  pos2 = 0;
-  pos3 = 0;
-  pos4 = 0;
-
-  nh.subscribe(twistSub);
 }
 
 void loop() {
+  // Handle ROS communication
   nh.spinOnce();
 
   // PID constants - adjust according to your needs
@@ -120,6 +106,7 @@ void loop() {
   float deltaT = ((float) (currT - prevT)) / 1.0e6;
   prevT = currT;
 
+  // Read encoder positions atomically
   ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
     pos1 = posi1;
     pos2 = posi2;
@@ -127,6 +114,7 @@ void loop() {
     pos4 = posi4;
   }
 
+  // Determine target based on direction
   switch (dir) {
     case 'F':
       target1 = target;
@@ -154,6 +142,7 @@ void loop() {
       break;
   }
 
+  // Calculate errors
   e1 = target1 - pos1;
   e2 = target2 - pos2;
   e3 = target3 - pos3;
@@ -177,11 +166,15 @@ void loop() {
 
   // Set motor speeds based on current state
   if (motorState == RUNNING) {
+    // Adjust as needed for your motor control interface
+    // Example:
     motor1.setSpeed(u1);
     motor2.setSpeed(u2);
     motor3.setSpeed(u3);
     motor4.setSpeed(u4);
   } else {
+    // Stop motors
+    // Example:
     motor1.setSpeed(0);
     motor2.setSpeed(0);
     motor3.setSpeed(0);
@@ -196,10 +189,14 @@ void loop() {
 
   // If all close to target, stop motors
   if ((abs(e2) <= 2 && abs(e3) <= 2) || (abs(e1) <= 2 && abs(e4) <= 2)) {
+    // Stop motors
+    // Example:
     motor1.setSpeed(0);
     motor2.setSpeed(0);
     motor3.setSpeed(0);
     motor4.setSpeed(0);
+
+    // Reset variables
     pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
     posi1 = 0, posi2 = 0, posi3 = 0, posi4 = 0;
     u1 = 0, u2 = 0, u3 = 0, u4 = 0;
@@ -208,7 +205,7 @@ void loop() {
     motorState = STOPPED;
   }
 
-  delay(10);
+  delay(10); // Adjust delay as needed
 }
 
 void readEncoder1() {

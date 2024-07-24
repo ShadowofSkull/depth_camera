@@ -101,3 +101,4 @@ void servoHcommand(int con) {
   // }
   // currentNum = newNom;
 }
+sudo apt-get install npm.

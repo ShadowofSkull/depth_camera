@@ -10,4 +10,8 @@
 Backup : 
 Manual Controll using PS2.
 
+How do I control both the arduino mega and arduino nano through the jetson nano terminals where I can send commands forward, backward, left 
+and right entered in the terminal and the wheels will follow. 
+- Send command to the ros topic 
 
+I just have to send command to the rostopic for the motor, is "

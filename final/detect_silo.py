@@ -69,7 +69,8 @@ def callback(colorFrame, depthFrame):
             conf = int(box.conf[0] * 100)
             cls = int(box.cls[0])
             clsName = names[cls]
-
+            print(f"cls :{clsName}, conf: {conf}")
+            
             # Skip if too low conf
             if conf <= 50:
                 continue
