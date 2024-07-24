@@ -69,50 +69,6 @@ def main_loop():
             print("Writing commands to serial")
             print(f"x: {current_x}, z: {current_z}, armState: {current_armState}")
 
-            # Determine direction for x-axis movement
-            if current_x < 0:
-                direction_x = "L"
-                current_x = abs(current_x)
-            else:
-                direction_x = "R"
-
-
-            # Send x direction movement command
-            distance = direction_x + str(current_x) + "\n"
-            # print(f"Distance command: {distance}")
-            print(f"distance {distance}")
-            ser1.write(distance.encode("utf-8"))
-            # time.sleep(1) # instead of delay can try while ser1.in_waiting == 0: pass
-            # while ser1.in_waiting == 0: 
-            #     print("in wait")
-            #     time.sleep(0.1)
-            # Verify x axis movement 
-            # if ser1.in_waiting > 0:
-            # line = ser1.read_until(b"\n").decode("utf-8").rstrip()  # Decode the received data
-            # print(f"Received x move: {line}")  # Debug print
-            # Update motorState
-            print(f"ser1: {ser1.in_waiting}")
-            while ser1.in_waiting <= 0:
-                print("in wait")
-                time.sleep(0.1)
-
-            # if ser1.in_waiting > 0:
-            line = ser1.read_until(b"\n").decode("utf-8").rstrip()  # Decode the received data
-            print(f"Received motorstate start should be 0: {line}")  # Debug print
-            motorState = line
-            print(f"Motor state should be 0: {motorState}")
-            # Wait till motor stop to proceed
-            while motorState == "0":
-                print("wait till motor stop")
-                # Update motorState
-                if ser1.in_waiting > 0:
-                    line = ser1.read_until(b"\n").decode("utf-8").rstrip()  # Decode the received data
-                    print(f"Received motorstate stop should be 1: {line}")  # Debug print
-                    motorState = line
-                    print(f"motor is 1: {motorState}")
-            # If armState is set, send z direction movement command
-            # print(f"Distance command: {distance}")
-
             distance = current_armState + str(current_z) + "\n"
             print(distance)
             ser1.write(distance.encode('utf-8'))

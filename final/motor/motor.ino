@@ -6,10 +6,10 @@
 #define ENCB1 14 // Encoder 1
 #define ENCA2 19  // Encoder 2 (LF)
 #define ENCB2 15  // Encoder 2
-#define ENCA3 2 // Encoder 3 (RF)
-#define ENCB3 16 // Encoder 3
-#define ENCA4 3 // Encoder 4 (RB)
-#define ENCB4 17 // Encoder 4
+#define ENCA3 3 // Encoder 3 (RF)
+#define ENCB3 17 // Encoder 3
+#define ENCA4 2 // Encoder 4 (RB)
+#define ENCB4 16 // Encoder 4
 
 volatile int posi1 = 0, posi2 = 0, posi3 = 0, posi4 = 0; // Positions
 int pos1, pos2, pos3, pos4;
@@ -73,31 +73,35 @@ void loop() {
     String command = Serial.readStringUntil('\n');
     if (command.startsWith("F")) {
       // Move forward
-      target = command.substring(1).toFloat()*0.367; // Extract distance from command
+//      target = command.substring(1).toFloat()*0.367; // Extract distance from command
+      target = command.substring(1).toFloat()*0.5; // Extract distance from command
       dir = 'F';
       // Serial.println("Front");
     } else if (command.startsWith("B")) {
       // Move backward
-      target = command.substring(1).toFloat()*0.367; // Extract distance from command
+//      target = command.substring(1).toFloat()*0.367; // Extract distance from command
+      target = command.substring(1).toFloat()*0.5; // Extract distance from command
       dir = 'B';
             // Serial.println("Back");
     } else if (command.startsWith("L")) {
       // Move left
-      target = command.substring(1).toFloat()*0.367; // Extract distance from command
+//      target = command.substring(1).toFloat()*0.367; // Extract distance from command
+      target = command.substring(1).toFloat()*0.5; // Extract distance from command
       dir = 'L';
             // Serial.println("Left");
     } else if (command.startsWith("R")) {
       // Move right
-      target = command.substring(1).toFloat()*0.367; // Extract distance from command
+//      target = command.substring(1).toFloat()*0.367; // Extract distance from command
+      target = command.substring(1).toFloat()*0.5; // Extract distance from command
       dir = 'R';
             // Serial.println("Right");
     }
     // Reset motor state to RUNNING when new target is set
-//    Serial.print(dir); // Echo received data back
-//    Serial.println(target);
-//    delay(10);
+//   Serial.print(dir); // Echo received data back
+//   Serial.println(target);
+//   delay(10);
     motorState = RUNNING;
-//    Serial.println(motorState);
+    Serial.println(motorState);
   }
 
   // PID constants - motor 1 and motor 2 and motor 4
@@ -216,22 +220,22 @@ void loop() {
   eprev3 = e3;
   eprev4 = e4;
 
-//if ((abs(e2) <= 2 && abs(e3) <= 2) || (abs(e1) <= 2 && abs(e4) <= 2)) {
-//    // If all close to target, stop motors
-//    motor1.setSpeed(0);
-//    motor2.setSpeed(0);
-//    motor3.setSpeed(0);
-//    motor4.setSpeed(0);
-//    // Reset position values
-//    pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-//    posi1 = 0, posi2 = 0, posi3 = 0, posi4 = 0;
-//    u1 = 0, u2 = 0, u3 = 0, u4 = 0;
-//    prevT = 0;
-//    eprev1 = 0, eprev2 = 0, eprev3 = 0, eprev4 = 0;
-//    // Reset motor state to STOPPED
-//    motorState = STOPPED;
-////    Serial.println(motorState);
-//  }
+if ((abs(e2) <= 2 && abs(e3) <= 2) || (abs(e1) <= 2 && abs(e4) <= 2)) {
+   // If all close to target, stop motors
+   motor1.setSpeed(0);
+   motor2.setSpeed(0);
+   motor3.setSpeed(0);
+   motor4.setSpeed(0);
+   // Reset position values
+   pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+   posi1 = 0, posi2 = 0, posi3 = 0, posi4 = 0;
+   u1 = 0, u2 = 0, u3 = 0, u4 = 0;
+   prevT = 0;
+   eprev1 = 0, eprev2 = 0, eprev3 = 0, eprev4 = 0;
+   // Reset motor state to STOPPED
+   motorState = STOPPED;
+   Serial.println(motorState);
+ }
 
   // Print debug information
 //   Serial.print(target);
@@ -240,10 +244,10 @@ void loop() {
 //   Serial.print(" ");
 //   Serial.print(pos2);
 //   Serial.print(" ");  
-   Serial.print(pos3);
-   Serial.print(" ");
-   Serial.print(pos4);
-   Serial.print(" ");
+  //  Serial.print(pos3);
+  //  Serial.print(" ");
+  //  Serial.print(pos4);
+  //  Serial.print(" ");
 //   Serial.print(target1);
 //   Serial.print(" ");
 //   Serial.print(target2);
@@ -256,9 +260,9 @@ void loop() {
 //   Serial.print(" ");
 //   Serial.println(u2);
 //   Serial.print(" ");  
-   Serial.print(u3);
-   Serial.print(" ");
-   Serial.println(u4);
+  //  Serial.print(u3);
+  //  Serial.print(" ");
+  //  Serial.println(u4);
 
   // Delay to stabilize the loop
   delay(10);
