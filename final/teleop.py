@@ -10,15 +10,14 @@ msg = """
 Reading from the keyboard !
 ---------------------------
 Moving around:
-   u    i    o
-   j    k    l
-   m    ,    .
+   0    w    0
+   a    s    d
+   0    0    0
 
-For Holonomic mode (strafing), hold down the shift key:
+For gripper, hold down the shift key:
 ---------------------------
-   U    I    O
-   J    K    L
-   M    <    >
+   j    k    l    ;
+
 
 
 anything else : stop
@@ -66,7 +65,7 @@ def vels(speed):
 
 if __name__ == "__main__":
     settings = termios.tcgetattr(sys.stdin)
-    validKeys = ["w", "a", "s", "d", "j", "k", "l", ";"]
+    validKeys = ["w", "a", "s", "d", "e", "r", "j", "k", "l", ";"]
     rospy.init_node("vel_Publisher")
     pub = rospy.Publisher("keyboard", String, queue_size=1)
 
