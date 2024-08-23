@@ -75,6 +75,20 @@ This guide captures the knowledge acquired while using a depth camera with ROS a
      - Follow ROS-related blogs, webinars, and conferences.
      - Regularly check the ROS Wiki for updates and new tutorials.
 
+## Examples (located in final folder)
+1. Training a model to use in object detection 
+2. How to manually send messages from terminal prompt to a topic (teleop.py)
+3. How to send commands from ROS to arduino (simpleRos2Serial.py)
+   1. Python serial and threading lib is used to pass ros msg via serial safely.
+   2. Threading's lock ensure only one process can access a shared variable at one time to prevent read or write error in all access it at once.
+   3. serial writes to the set serial port under fix baud rate. (both must be same on arduino's side)
+4. How to perform object detection using rgbd camera (detect_silo.py)
+   1. cvbridge lib is used to convert image format represented as rosmsg to opencv's format for easier process for object detection.
+   2. In the callback function of the ros subscriber `imgmsg_to_cv2` is used to convert the image format
+   3. Image is then pass into yolov8 model to get result of object detection
+   4. The rest is using the result acquire to perform rule based decision making of robot
+5. Refer [LOG.md](LOG.md) for more
+
 
 ## Tips
 - **Experiment**: Don’t hesitate to try different commands and scripts. Break things to learn how to fix them.
@@ -88,3 +102,6 @@ This guide captures the knowledge acquired while using a depth camera with ROS a
 
 ## Conclusion
 This guide is a stepping stone for beginners to build a solid foundation in ROS, Linux, and more. Keep learning, experimenting, and don't be afraid to dive deeper into more advanced topics as you become more comfortable.
+
+### Note
+- More complete and working codes are in the `final` folder, others are all the things we experimented with to reach what is in final.
