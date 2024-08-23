@@ -1,26 +1,47 @@
 # Log of Depth Camera Usage Research
 
 ## Table of Contents
-  - [Setup ROS2 \& OpenNI SDK (Windows 11) *No longer using*](#setup-ros2--openni-sdk-windows-11-no-longer-using)
-  - [Setup ROS \& OpenNI SDK (WIN 11) *Preferred*](#setup-ros--openni-sdk-win-11-preferred)
-    - [IMPORTANT NOTES](#important-notes)
-  - [QuickStart](#quickstart)
-  - [How to take picture](#how-to-take-picture)
-  - [Getting Detect.py to work](#getting-detectpy-to-work)
-  - [Integration of ROS depth camera \& OpenCV](#integration-of-ros-depth-camera--opencv)
+  - [Concepts Learnt](#concepts-learnt)
+  - [QuickStart for automation (WIP)](#quickstart-for-automation-wip)
+  - [Virtualisation](#virtualisation)
+    - [Setup ROS2 \& OpenNI SDK (Windows 11) (Wasn't used)](#setup-ros2--openni-sdk-windows-11-wasnt-used)
+    - [Setup ROS \& OpenNI SDK (WIN 11)](#setup-ros--openni-sdk-win-11)
+      - [Notes](#notes)
+  - [OpenNI SDK](#openni-sdk)
+    - [How to take picture](#how-to-take-picture)
+  - [ROS](#ros)
+    - [Utilisation of custom ROS msg](#utilisation-of-custom-ros-msg)
+    - [Running custom code as ROS node](#running-custom-code-as-ros-node)
   - [Jetson Orin Nano](#jetson-orin-nano)
     - [Reinstall jetpack (The OS)](#reinstall-jetpack-the-os)
-  - [Python virtual env](#python-virtual-env)
-  - [Docker (able to use ros but udev which handles usb does not work)](#docker-able-to-use-ros-but-udev-which-handles-usb-does-not-work)
+  - [Python](#python)
+    - [Python virtual env](#python-virtual-env)
+  - [Docker (udev linux device manager does not work causing inability to use depth camera)](#docker-udev-linux-device-manager-does-not-work-causing-inability-to-use-depth-camera)
     - [Installation](#installation)
-    - [QuickStart](#quickstart-1)
+    - [QuickStart](#quickstart)
     - [Extra commands](#extra-commands)
     - [Building image from scratch](#building-image-from-scratch)
   - [Issues](#issues)
   - [Author](#author)
 
+## Concepts Learnt
+- **ROS Basics**: Learn to navigate the ROS environment, including setting up packages, nodes, and topics.
+- **Linux Command Line**: Master essential Linux commands like `ls`, `cd`, `grep`, and `chmod` that are frequently used in ROS workflows.
+- **Depth Camera Setup**: Understand how to connect and configure depth cameras in a ROS environment, including troubleshooting common issues.
+- **OpenNI and OpenCV**: Explore the usage of OpenNI for depth sensing and OpenCV for image processing, and how they integrate with ROS.
+- **Python Scripting in ROS**: Learn how to write Python scripts that interact with ROS nodes, process depth data, and handle camera outputs.
+- **Virtualisation for ROS**: Quick development when software or hardware takes time to setup though lack completeness
 
-## Setup ROS2 & OpenNI SDK (Windows 11) (Wasn't used)
+## QuickStart for automation (WIP)
+1. Run `roslaunch astra_camera astra.launch`
+2. Run `python3 ultrasonic_sensor.py`
+3. Run `python3 detect_silo.py`
+4. Run `python3 ros2serial_gripper.py` and `python3 ros2serial_gripper.py`
+5. Turn on motor and gripper power
+
+## Virtualisation
+
+### Setup ROS2 & OpenNI SDK (Windows 11) (Wasn't used)
 1. Download a VM of your choice (Oracle VirtualBox is used)
 2. Download Ubuntu 22.04 LTS Jammy Jellyfish iso image (so its compatible with ROS2 Humble)
 3. Setup the Ubuntu VM (at least 4GB RAM but 8GB is better, minimum 25GB storage, 4CPU, USB of depth cam need to be added)
@@ -30,15 +51,15 @@
 7. Halfway through you might run into an error with a command starting with `colcon` because its not installed. Follow the steps from [here](https://colcon.readthedocs.io/en/released/user/installation.html#:~:text=In%20the%20context%20of%20the%20ROS%20project) to download it.
 8. At the end, you should see a program with black and white image
 
-## Setup ROS & OpenNI SDK (WIN 11) *Preferred*
+### Setup ROS & OpenNI SDK (WIN 11) 
 1. Download VM
 2. Download Ubuntu 20
 3. Setup VM (Remember to add usb to vm)
 4. Follow steps from here to setup ROS [here](https://wiki.ros.org/noetic/Installation/Ubuntu)
 5. Follow steps from here to setup OpenNI [here](https://github.com/orbbec/ros_astra_camera)
 
-### Notes
-1. If using virtualbox vm after setting up vm
+#### Notes
+1. If using virtualbox vm after setting up vm go to setting usb and add the usb (must be plugged in the same physical port)
 2. USB controller of VM is set to usb3.0 (has smoother video stream)
 3. This might need to be rerun everytime for it to detect the camera
      ```shell
@@ -47,14 +68,8 @@
         sudo udevadm control --reload && sudo udevadm trigger
      ```
 
-## QuickStart
-1. Run `roslaunch astra_camera astra.launch`
-2. Run `python3 ultrasonic_sensor.py`
-3. Run `python3 detect_silo.py`
-4. Run `python3 ros2serial_gripper.py` and `python3 ros2serial_gripper.py`
-5. Turn on motor and gripper power
-
-## How to take picture
+## OpenNI SDK
+### How to take picture
 1. Use below command
 ```shell
    rosservice call /camera/save_images "{}"
@@ -63,13 +78,14 @@
 3. xdg-open <filename>
    - Replace <filename> with filename
 
-## Getting Detect.py to work
+## ROS
+### Utilisation of custom ROS msg
 It uses custom made msg so need to follow this: 
 1. Create Coords.msg and CoordsMatrix.msg in `/home/ros/ros_ws/src/ros_astra_camera/msg`
 2. Copy contents of both files from `msg` folder here into your local machine 
-3. Follow the steps here to build the custom msg, [link](http://wiki.ros.org/ROS/Tutorials/CreatingMsgAndSrv#Common_step_for_msg_and_srv)
+3. Follow the steps here to build the custom msg [link](http://wiki.ros.org/ROS/Tutorials/CreatingMsgAndSrv#Common_step_for_msg_and_srv)
 
-## Integration of ROS depth camera & OpenCV
+### Running custom code as ROS node
 1. Installation not needed since all necessary dependencies are downloaded in `ros_astra_camera` package
 2. Get into `Scripts` folder in `ros_astra_camera`
 ```shell
@@ -124,7 +140,8 @@ roslaunch astra_camera astra.launch
 4. Provide Jetson Power to boot in (safe mode/reset mode?)
 5. Install with SDK Manager
 
-## Python virtual env
+## Python
+### Python virtual env
 Purpose is to create an isolated environment for python packages so there is no risk of dependencies conflict with other similar packages
 1. Install virtual env(venv) package
 ```shell
@@ -163,7 +180,7 @@ pip freeze > requirements.txt
 ```
 
 
-## Docker (able to use ros but udev which handles usb does not work)
+## Docker (udev linux device manager does not work causing inability to use depth camera)
 ### Installation
 1. Download docker desktop from the [site](https://www.docker.com/products/docker-desktop/)
 2. Follow instructions here
@@ -210,7 +227,9 @@ docker build -t <image name> .
    1. A: Issue lies in ros2 and openni sdk for ros2, use back ros instead
 2. ROS2 openni seems to not support uvc camera color stream which our depth cam seems to be
    1. check if can activate uvc like in ros1 or not
-
+3. Unable to synchronise Arduino and Python code through serial.
+4. Lack of real world and virtual world Gazebo testing cause automation to fail
+5. Remote disconnection issue potentially due to limitation of ssh or internet connection of field. 
   
 ## Author
 [Adam](https://github.com/Jung028) and [Zheng](https://github.com/ShadowofSkull/) 
