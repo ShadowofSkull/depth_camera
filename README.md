@@ -1,12 +1,14 @@
 # Robocon Software Guide
 
 ## Table of Contents
+
   - [Introduction](#introduction)
-  - [Important Concepts](#important-concepts)
-  - [Tips for Beginners](#tips-for-beginners)
-  - [Future Exploration](#future-exploration)
+  - [Roadmap to Learning ROS (Robot Operating System)](#roadmap-to-learning-ros-robot-operating-system)
+  - [Examples (located in final folder)](#examples-located-in-final-folder)
+  - [Tips](#tips)
   - [Additional Resources](#additional-resources)
   - [Conclusion](#conclusion)
+    - [Note](#note)
 
 ## Introduction
 This guide captures the knowledge acquired while using a depth camera with ROS and Linux during Robocon 2024. It is designed to help beginners get up to speed with the basics of ROS, Linux, depth cameras, and more.
